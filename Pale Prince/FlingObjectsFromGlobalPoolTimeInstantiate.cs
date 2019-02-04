@@ -28,7 +28,6 @@ namespace Pale_Prince
 			originVariationY = null;
 		}
 
-		// Token: 0x06000D08 RID: 3336 RVA: 0x00066F20 File Offset: 0x00065320
 		public override void OnUpdate()
 		{
 			timer += Time.deltaTime;
@@ -86,59 +85,45 @@ namespace Pale_Prince
 			}
 		}
 
-		// Token: 0x04000BCF RID: 3023
 		[RequiredField]
 		[PublicAPI]
 		public Func<GameObject> gameObject;
 
-		// Token: 0x04000BD0 RID: 3024
 		[PublicAPI]
 		public FsmGameObject spawnPoint;
 
-		// Token: 0x04000BD1 RID: 3025
 		[PublicAPI]
 		public FsmVector3 position;
 
-		// Token: 0x04000BD2 RID: 3026
 		[PublicAPI]
 		public FsmFloat frequency;
 
-		// Token: 0x04000BD3 RID: 3027
 		[PublicAPI]
 		public FsmInt spawnMin;
 
-		// Token: 0x04000BD4 RID: 3028
 		[PublicAPI]
 		public FsmInt spawnMax;
 
-		// Token: 0x04000BD5 RID: 3029
 		[PublicAPI]
 		public FsmFloat speedMin;
 
-		// Token: 0x04000BD6 RID: 3030
 		[PublicAPI]
 		public FsmFloat speedMax;
 
-		// Token: 0x04000BD7 RID: 3031
 		[PublicAPI]
 		public FsmFloat angleMin;
 
-		// Token: 0x04000BD8 RID: 3032
 		[PublicAPI]
 		public FsmFloat angleMax;
 
-		// Token: 0x04000BD9 RID: 3033
 		[PublicAPI]
 		public FsmFloat originVariationX;
 
-		// Token: 0x04000BDA RID: 3034
 		[PublicAPI]
 		public FsmFloat originVariationY;
 
-		// Token: 0x04000BDD RID: 3037
 		private float timer;
 
-		// Token: 0x04000BDE RID: 3038
 		private bool originAdjusted;
 	}
 }

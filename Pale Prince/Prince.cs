@@ -6,18 +6,22 @@ using HutongGames.PlayMaker;
 using HutongGames.PlayMaker.Actions;
 using ModCommon;
 using UnityEngine;
+using Random = System.Random;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace Pale_Prince
 {
     internal class Prince : MonoBehaviour
     {
+        private const int HP = 3000;
         private HealthManager _hm;
 
         private tk2dSpriteAnimator _anim;
 
         private PlayMakerFSM _control;
         private PlayMakerFSM _stuns;
+
+        private readonly Random _rand = new Random();
 
         private readonly Dictionary<string, float> _fpsDict = new Dictionary<string, float>
         {
@@ -55,7 +59,7 @@ namespace Pale_Prince
                 return _silentLongLifetime;
             }
         }
-        
+
         private GameObject _silentLongLifetime;
 
         private GameObject SilentShot
@@ -134,10 +138,14 @@ namespace Pale_Prince
 
             _trail = AddTrail(gameObject, 1.8f);
 
-            _hm.hp = 3000;
-            #warning Change this back.
-            // _control.Fsm.GetFsmInt("Half HP").Value = _hm.hp /*   / 2 */;
-            // _control.Fsm.GetFsmInt("Quarter HP").Value = _hm.hp /* / 4 */;
+            _hm.hp = HP;
+            _control.Fsm.GetFsmInt("Half HP").Value = HP    * 2 / 3;
+            _control.Fsm.GetFsmInt("Quarter HP").Value = HP * 1 / 3;
+
+            for (int i = 0; i < 3; i++)
+            {
+                _control.RemoveAction<IntOperator>("Set Phase HP");
+            }
 
             _control.InsertMethod("Tele Out", 0, () => { _trail.Pause(); });
 
@@ -157,7 +165,8 @@ namespace Pale_Prince
                 {
                     Quaternion angle = Quaternion.Euler(Vector3.zero);
                     Vector3 pos = transform.position;
-                    float x = transform.localScale.x > 0 ? speed : -speed;
+                    //float x = transform.localScale.x > 0 ? speed : -speed;
+                    float x = speed * Math.Sign(transform.localScale.x);
 
                     for (float i = 0; i <= 3; i += 1.5f)
                     {
@@ -200,7 +209,56 @@ namespace Pale_Prince
 
         private void AddDashTele()
         {
-            
+            IEnumerator TeleOut()
+            {
+                if (_hm.hp             > HP * 2 / 3) yield break;
+                if (_rand.Next(0, 2) == 0) yield break;
+
+                yield return new WaitForSeconds(.15f);
+
+                _anim.Stop();
+
+                _trail.Pause();
+
+                _control.SetState("Tele Out Dash");
+            }
+
+            _control.AddCoroutine("Dash", TeleOut);
+
+            _control.CopyState("Tele Out", "Tele Out Dash");
+            _control.CopyState("TelePos Slash", "TelePos DashOut");
+            _control.CopyState("Tele In", "Tele In Dash");
+
+            _control.AddTransition("Dash", "TELE", "Tele Out Dash");
+
+            _control.ChangeTransition("Tele Out Dash", "FINISHED", "TelePos DashOut");
+            _control.ChangeTransition("TelePos DashOut", "FINISHED", "Tele In Dash");
+            _control.ChangeTransition("Tele In Dash", "FINISHED", "Dash Continue");
+
+            _control.CreateState("Dash Continue");
+
+            IEnumerator ResumeDash()
+            {
+                _trail.Play();
+
+                transform.localScale = transform.localScale.SetX
+                (
+                    Math.Abs(transform.localScale.x) *
+                    Math.Sign(HeroController.instance.transform.position.x - transform.position.x)
+                );
+
+                gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(60 * Math.Sign(transform.localScale.x), 0);
+
+                _anim.Play("Dash");
+
+                yield return new WaitForSeconds(.15f);
+
+                _anim.Stop();
+            }
+
+            _control.InsertCoroutine("Dash Continue", 0, ResumeDash);
+
+            _control.AddTransition("Dash Continue", FsmEvent.Finished, "Dash Recover");
         }
 
         private void AddChestShot()
@@ -233,8 +291,6 @@ namespace Pale_Prince
 
                 _anim.Play("ChestShot Antic");
 
-                Log(_anim.GetClipByName("ChestShot Antic").Duration);
-
                 yield return new WaitForSeconds(_anim.GetClipByName("ChestShot Antic").Duration);
             }
 
@@ -251,9 +307,9 @@ namespace Pale_Prince
                 var rb = gameObject.GetComponent<Rigidbody2D>();
 
                 float y = transform.position.y + 4;
-                
+
                 _trail.Pause();
-                
+
                 rb.velocity = transform.up * 4.20f;
 
                 while (transform.position.y < y)
@@ -262,7 +318,7 @@ namespace Pale_Prince
                 }
 
                 rb.velocity = Vector3.zero;
-                
+
                 _trail.Play();
 
                 yield return new WaitForSeconds(0.85f);
@@ -273,7 +329,7 @@ namespace Pale_Prince
             IEnumerator ChestShot()
             {
                 GameCameras.instance.cameraShakeFSM.Fsm.GetFsmBool("RumblingMed").Value = true;
-                
+
                 Quaternion down = Quaternion.Euler(Vector3.down);
                 Quaternion right = Quaternion.Euler(Vector3.right);
 
@@ -285,25 +341,21 @@ namespace Pale_Prince
                             .GetComponent<Rigidbody2D>()
                             .velocity = new Vector2(0, -10);
                     }
-                    
+
                     for (float i = 6.4f; i <= 20f; i += 4f)
                     {
                         Instantiate(SilentLongLifetime, new Vector3(29.3f, i), right)
                             .GetComponent<Rigidbody2D>()
                             .velocity = new Vector2(10, 0);
                     }
-                    
+
                     yield return new WaitForSeconds(.75f);
                 }
             }
 
             _control.InsertCoroutine("ChestShot", 0, ChestShot);
 
-            _control.InsertMethod("ChestShot Pause", 0, () =>
-            {
-                GameCameras.instance.cameraShakeFSM.Fsm.GetFsmBool("RumblingMed").Value = false;
-                // Audio?
-            });
+            _control.InsertMethod("ChestShot Pause", 0, () => { GameCameras.instance.cameraShakeFSM.Fsm.GetFsmBool("RumblingMed").Value = false; });
 
             _control.AddAction("ChestShot Pause", new Wait
             {
@@ -486,14 +538,25 @@ namespace Pale_Prince
 
         private void AddAlternatePlumes()
         {
+            _control.CreateBool("Falling");
+            
+            _control.AddMethod("Stomp Land", () =>
+            {
+                _control.Fsm.GetFsmBool("Falling").Value = _rand.Next(0, 2) == 0;
+            });
+            
             void GenAlternatePlume()
             {
                 GameObject go = Instantiate(_control.Fsm.GetFsmGameObject("Plume").Value);
                 go.transform.Rotate(180, 0, 0);
-                Vector3 pos = go.transform.position;
-                pos.x += 1.85f;
-                pos.y = 22;
-                go.transform.position = pos;
+                go.transform.position = new Vector3(go.transform.position.x + 1.85f, 22);
+
+                if (!_control.Fsm.GetFsmBool("Falling").Value) return;
+                
+                Destroy(_control.Fsm.GetFsmGameObject("Plume").Value);
+
+                go.GetComponent<tk2dSprite>().color = new Color(.675f, .678f, .686f);
+                go.GetOrAddComponent<Rigidbody2D>().gravityScale = .7f;
             }
 
             _control.InsertMethod("Plume Gen", 5, GenAlternatePlume);

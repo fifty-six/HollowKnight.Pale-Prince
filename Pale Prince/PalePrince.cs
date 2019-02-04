@@ -1,5 +1,9 @@
-﻿using Modding;
+﻿using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using Modding;
 using JetBrains.Annotations;
+using UnityEngine;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace Pale_Prince

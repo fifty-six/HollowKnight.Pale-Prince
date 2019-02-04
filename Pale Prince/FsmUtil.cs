@@ -123,7 +123,7 @@ namespace Pale_Prince
         }
 
         [PublicAPI]
-        public static void InsertAction(this PlayMakerFSM fsm, string state, int ind, RandomFloat action)
+        public static void InsertAction(this PlayMakerFSM fsm, string state, int ind, FsmStateAction action)
         {
             InsertAction(fsm, state, action, ind);
         }
@@ -298,6 +298,18 @@ namespace Pale_Prince
                 }
             }
         }
+        
+        [PublicAPI]
+        public static void AddCoroutine(this PlayMakerFSM fsm, string stateName, Func<IEnumerator> method)
+        {
+            fsm.InsertCoroutine(stateName, fsm.GetState(stateName).Actions.Length, method);
+        }
+        
+        [PublicAPI]
+        public static void AddMethod(this PlayMakerFSM fsm, string stateName, Action method)
+        {
+            fsm.InsertMethod(stateName, fsm.GetState(stateName).Actions.Length, method);
+        }
 
         [PublicAPI]
         public static void InsertMethod(this PlayMakerFSM fsm, string stateName, int index, Action method)
@@ -318,6 +330,16 @@ namespace Pale_Prince
             List<FsmInt> intVars = fsm.FsmVariables.IntVariables.ToList();
             intVars.Add(@new);
             fsm.Fsm.Variables.IntVariables = intVars.ToArray();
+            return @new;
+        }
+        
+        [PublicAPI]
+        public static FsmBool CreateBool(this PlayMakerFSM fsm, string boolName)
+        {
+            var @new = new FsmBool(boolName);
+            List<FsmBool> boolVars = fsm.FsmVariables.BoolVariables.ToList();
+            boolVars.Add(@new);
+            fsm.Fsm.Variables.BoolVariables = boolVars.ToArray();
             return @new;
         }
 
