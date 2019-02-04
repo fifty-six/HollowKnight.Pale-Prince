@@ -17,6 +17,7 @@ namespace Pale_Prince
         private void SceneChanged(Scene arg0, Scene arg1)
         {
             if (arg1.name != "GG_Hollow_Knight") return;
+            if (arg0.name != "GG_Workshop") return;
 
             StartCoroutine(AddComponent());
         }

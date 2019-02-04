@@ -1,16 +1,16 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Reflection;
-using Modding;
+﻿using Modding;
 using JetBrains.Annotations;
-using UnityEngine;
+using UnityEngine.SceneManagement;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
+using UObject = UnityEngine.Object;
 
 namespace Pale_Prince
 {
     [UsedImplicitly]
     public class PalePrince : Mod, ITogglableMod
     {
+        private string _lastScene;
+
         public PalePrince()
         {
             typeof(Mod).GetField("Name").SetValue(this, "Pale Prince");
@@ -21,14 +21,20 @@ namespace Pale_Prince
             ModHooks.Instance.AfterSavegameLoadHook += SaveGame;
             ModHooks.Instance.NewGameHook += AddComponent;
             ModHooks.Instance.LanguageGetHook += OnLangGet;
+            USceneManager.activeSceneChanged += SceneChanged;
         }
 
-        private static string OnLangGet(string key, string sheettitle)
+        private void SceneChanged(Scene arg0, Scene arg1)
+        {
+            _lastScene = arg0.name;
+        }
+
+        private string OnLangGet(string key, string sheettitle)
         {
             switch (key)
             {
                 case "NAME_HK_PRIME":
-                case "HK_PRIME_MAIN":
+                case "HK_PRIME_MAIN" when _lastScene == "GG_Workshop":
                     return "Pale Prince";
                 case "GG_S_HK":
                     return "Suffer.";
@@ -48,6 +54,13 @@ namespace Pale_Prince
         {
             ModHooks.Instance.AfterSavegameLoadHook -= SaveGame;
             ModHooks.Instance.NewGameHook -= AddComponent;
+            ModHooks.Instance.LanguageGetHook -= OnLangGet;
+
+            var finder = GameManager.instance.gameObject.GetComponent<PrinceFinder>();
+
+            if (finder != null)
+                UObject.Destroy(finder);
+
         }
     }
 }
