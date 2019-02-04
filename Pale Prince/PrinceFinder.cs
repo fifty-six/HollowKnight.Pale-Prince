@@ -1,5 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Collections;
+using System.Reflection;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Logger = Modding.Logger;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 
@@ -7,19 +9,28 @@ namespace Pale_Prince
 {
     internal class PrinceFinder : MonoBehaviour
     {
-        private GameObject _prince;
-
         private void Start()
         {
-            Log("Added PrinceFinder Behaviour");
+            USceneManager.activeSceneChanged += SceneChanged;
         }
 
-        private void Update()
+        private void SceneChanged(Scene arg0, Scene arg1)
         {
-            if (_prince != null) return;
-            _prince = GameObject.Find("HK Prime");
-            if (_prince == null) return;
-            _prince.AddComponent<Prince>();
+            if (arg1.name != "GG_Hollow_Knight") return;
+
+            StartCoroutine(AddComponent());
+        }
+
+        private static IEnumerator AddComponent()
+        {
+            yield return null;
+
+            GameObject.Find("HK Prime").AddComponent<Prince>();
+        }
+
+        private void OnDestroy()
+        {
+            USceneManager.activeSceneChanged -= SceneChanged;
         }
 
         public static void Log(object o)

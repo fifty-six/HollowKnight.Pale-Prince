@@ -202,8 +202,6 @@ namespace Pale_Prince
                 _control.InsertMethod(state.Name, state.Actions.Length, () => Log($"End: {state.Name}"));
             }
 
-            _control.gameObject.PrintSceneHierarchyTree("ModVessel");
-
             Log("Done.");
         }
 
