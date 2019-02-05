@@ -25,7 +25,9 @@ namespace Pale_Prince
 
         private readonly Dictionary<string, float> _fpsDict = new Dictionary<string, float>
         {
-            ["Dash"] = 40
+            ["Dash"] = 40,
+            ["Focus Antic"] = 20,
+            ["Recover"] = 20
         };
 
         private ParticleSystem _trail;
@@ -187,6 +189,8 @@ namespace Pale_Prince
 
             _control.GetAction<Wait>("Tendril Burst").time.Value /= 1.5f;
 
+            _control.GetAction<Wait>("Focus Charge").time.Value /= 1.25f;
+
             AddChestShot();
 
             AddDashTele();
@@ -195,12 +199,19 @@ namespace Pale_Prince
             {
                 _anim.GetClipByName(i.Key).fps = i.Value;
             }
-
+            
+            #if DEBUG
             foreach (FsmState state in _control.FsmStates)
             {
                 _control.InsertMethod(state.Name, 0, () => Log($"Start: {state.Name}"));
                 _control.InsertMethod(state.Name, state.Actions.Length, () => Log($"End: {state.Name}"));
             }
+            
+            foreach (tk2dSpriteAnimationClip clip in _anim.Library.clips)
+            {
+                Log($"{clip.name}: {clip.fps}");
+            }
+            #endif
 
             Log("Done.");
         }
@@ -439,7 +450,9 @@ namespace Pale_Prince
 
                 FsmState clone = _control.CopyState(state, CloneName(state));
 
+                #if DEBUG
                 Log("Created state " + clone.Name);
+                #endif
 
                 foreach (FsmTransition trans in clone.Transitions)
                 {
@@ -480,8 +493,6 @@ namespace Pale_Prince
             // Each arc type has its own antic
             _control.InsertMethod("Arc Antic", 1, () =>
             {
-                Log($"Chooser is {_control.Fsm.GetFsmFloat("Chooser").Value}");
-
                 _control.GetAction<Tk2dPlayAnimationWithEvents>("Arc Antic").clipName = _control.Fsm.GetFsmFloat("Chooser").Value <= 50f
                     ? "DartShoot Antic"
                     : "SmallShot Antic";
@@ -492,7 +503,11 @@ namespace Pale_Prince
             _control.AddAction("Arc Start", _control.GetAction<ActivateGameObject>("Tendril Burst"));
             _control.AddAction("Arc Recover", _control.GetAction<ActivateGameObject>("Tendril Recover"));
 
-            _control.GetAction<SendRandomEventV3>("Choice P3")
+            string[] choices = {"Choice P3", "Choice P2"};
+            
+            foreach(string state in choices)
+            {
+                _control.GetAction<SendRandomEventV3>(state)
                     .AddToSendRandomEventV3
                     (
                         "Arc Antic",
@@ -500,6 +515,7 @@ namespace Pale_Prince
                         1,
                         5
                     );
+            }
 
             var lowHighArc = _control.GetAction<FlingObjectsFromGlobalPoolTime>("Arc LowHigh");
             var highLowArc = _control.GetAction<FlingObjectsFromGlobalPoolTime>("Arc HighLow");
@@ -554,7 +570,11 @@ namespace Pale_Prince
                 Destroy(_control.Fsm.GetFsmGameObject("Plume").Value);
 
                 go.GetComponent<tk2dSprite>().color = new Color(.675f, .678f, .686f);
-                go.GetOrAddComponent<Rigidbody2D>().gravityScale = .7f;
+
+                go.GetComponent<PlayMakerFSM>().InsertMethod("Plume1", 0, () =>
+                {
+                    go.GetOrAddComponent<Rigidbody2D>().gravityScale = .7f;
+                });
             }
 
             _control.InsertMethod("Plume Gen", 5, GenAlternatePlume);

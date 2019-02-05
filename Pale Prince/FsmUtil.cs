@@ -324,10 +324,16 @@ namespace Pale_Prince
         }
 
         [PublicAPI]
-        public static FsmInt CreateInt(this PlayMakerFSM fsm, string intName)
+        public static FsmInt GetOrCreateInt(this PlayMakerFSM fsm, string intName)
         {
             var @new = new FsmInt(intName);
             List<FsmInt> intVars = fsm.FsmVariables.IntVariables.ToList();
+
+            FsmInt prev = intVars.FirstOrDefault(x => x.Name == intName);
+
+            if (prev != null)
+                return prev;
+            
             intVars.Add(@new);
             fsm.Fsm.Variables.IntVariables = intVars.ToArray();
             return @new;
@@ -351,7 +357,8 @@ namespace Pale_Prince
             float                  weight,
             int                    eventMaxAmount,
             int                    missedMaxAmount,
-            [CanBeNull] string     eventName = null
+            [CanBeNull] string     eventName = null,
+            bool                   createInt = true
         )
         {
             var fsm = sre.Fsm.Owner as PlayMakerFSM;
@@ -369,9 +376,9 @@ namespace Pale_Prince
 
             events.Add(fsm.GetState(state).Transitions.Single(x => x.FsmEvent.Name == eventName).FsmEvent);
             weights.Add(weight);
-            trackingInts.Add(fsm.CreateInt($"Ct {eventName}"));
+            trackingInts.Add(fsm.GetOrCreateInt($"Ct {eventName}"));
             eventMax.Add(eventMaxAmount);
-            trackingIntsMissed.Add(fsm.CreateInt($"Ms {eventName}"));
+            trackingIntsMissed.Add(fsm.GetOrCreateInt($"Ms {eventName}"));
             missedMax.Add(missedMaxAmount);
 
             sre.events = events.ToArray();
