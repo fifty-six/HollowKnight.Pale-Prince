@@ -266,10 +266,12 @@ namespace Pale_Prince
                 if (_hm.hp             > HP * 2 / 3) yield break;
                 if (_rand.Next(0, 2) == 0) yield break;
 
+                yield return new WaitForSeconds(.20f);
+                
+                if(_control.ActiveStateName != "Dash") yield break;
+                
                 psr.material.shader = Shader.Find("Particles/Multiply");
                 main.startColor = Color.black;
-
-                yield return new WaitForSeconds(.20f);
 
                 _anim.Stop();
 
