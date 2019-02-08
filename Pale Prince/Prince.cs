@@ -26,8 +26,6 @@ namespace Pale_Prince
         private readonly Dictionary<string, float> _fpsDict = new Dictionary<string, float>
         {
             ["Dash"] = 40,
-            ["Focus Antic"] = 20,
-            ["Recover"] = 20
         };
 
         private ParticleSystem _trail;
@@ -47,6 +45,22 @@ namespace Pale_Prince
         }
 
         private GameObject _heavyShot;
+        
+        private GameObject HeavyShotGlow
+        {
+            get
+            {
+                if (_heavyShotGlow != null) return _heavyShotGlow;
+
+                _heavyShotGlow = Instantiate(BlackShotGlow);
+
+                _heavyShotGlow.GetComponent<Rigidbody2D>().gravityScale = 1f;
+
+                return _heavyShotGlow;
+            }
+        }
+
+        private GameObject _heavyShotGlow;
 
         private GameObject SilentLongLifetime
         {
@@ -91,7 +105,7 @@ namespace Pale_Prince
                 _blackShot.GetComponent<tk2dSprite>().color = Color.black;
 
                 ParticleSystem.MainModule main = _blackShot.GetComponentInChildren<ParticleSystem>(true).main;
-
+                
                 main.startColor = Color.black;
 
                 var psrend = _blackShot.GetComponentInChildren<ParticleSystemRenderer>();
@@ -113,6 +127,26 @@ namespace Pale_Prince
         }
 
         private GameObject _blackShot;
+        
+        private GameObject BlackShotGlow
+        {
+            get
+            {
+                if (_blackShotGlow != null) return _blackShotGlow;
+
+                _blackShotGlow = Instantiate(BlackShot);
+
+                GameObject glow = _blackShotGlow.FindGameObjectInChildren("Glow");
+                
+                glow.GetComponent<tk2dSprite>().color = Color.white;
+                Destroy(glow.GetComponent<DeactivateAfter2dtkAnimation>());
+                glow.AddComponent<Replay2dtkAnimation>();
+
+                return _blackShotGlow;
+            }
+        }
+
+        private GameObject _blackShotGlow;
 
         private void Awake()
         {
@@ -141,8 +175,15 @@ namespace Pale_Prince
             _trail = AddTrail(gameObject, 1.8f);
 
             _hm.hp = HP;
+            
+            #if DEBUG
+            _control.Fsm.GetFsmInt("Half HP").Value = HP;
+            _control.Fsm.GetFsmInt("Quarter HP").Value = HP;
+            _hm.hp /= 3;
+            #else
             _control.Fsm.GetFsmInt("Half HP").Value = HP    * 2 / 3;
             _control.Fsm.GetFsmInt("Quarter HP").Value = HP * 1 / 3;
+            #endif
 
             for (int i = 0; i < 3; i++)
             {
@@ -167,7 +208,6 @@ namespace Pale_Prince
                 {
                     Quaternion angle = Quaternion.Euler(Vector3.zero);
                     Vector3 pos = transform.position;
-                    //float x = transform.localScale.x > 0 ? speed : -speed;
                     float x = speed * Math.Sign(transform.localScale.x);
 
                     for (float i = 0; i <= 3; i += 1.5f)
@@ -218,12 +258,18 @@ namespace Pale_Prince
 
         private void AddDashTele()
         {
+            ParticleSystem.MainModule main = _trail.main;
+            var psr = _trail.GetComponent<ParticleSystemRenderer>();
+            
             IEnumerator TeleOut()
             {
                 if (_hm.hp             > HP * 2 / 3) yield break;
                 if (_rand.Next(0, 2) == 0) yield break;
 
-                yield return new WaitForSeconds(.15f);
+                psr.material.shader = Shader.Find("Particles/Multiply");
+                main.startColor = Color.black;
+
+                yield return new WaitForSeconds(.20f);
 
                 _anim.Stop();
 
@@ -248,6 +294,9 @@ namespace Pale_Prince
 
             IEnumerator ResumeDash()
             {
+                psr.material.shader = Shader.Find("Particles/Additive");
+                main.startColor = Color.white;
+                
                 _trail.Play();
 
                 transform.localScale = transform.localScale.SetX
@@ -344,7 +393,7 @@ namespace Pale_Prince
 
                 for (int _ = 0; _ < 6; _++)
                 {
-                    for (float i = 29.3f; i <= 61.7f; i += 4.2f)
+                    for (float i = 29.3f; i <= 61.7f; i += 4.6f)
                     {
                         Instantiate(SilentLongLifetime, new Vector3(i, 20), down)
                             .GetComponent<Rigidbody2D>()
@@ -464,15 +513,8 @@ namespace Pale_Prince
             foreach (string state in new string[] {"Arc L Wave", "Arc R Wave"})
             {
                 _control.RemoveAction<SendEvent>(state);
-                _control.RemoveAction<RandomFloat>(state);
+                _control.RemoveAction(state, 2);
             }
-
-            _control.InsertAction("Arc Antic", 0, new RandomFloat
-            {
-                min = 0,
-                max = 100,
-                storeResult = _control.Fsm.GetFsmFloat("Chooser")
-            });
 
             var arcLowHighLAngle = _control.GetAction<RandomFloat>("Arc L Wave");
 
@@ -491,8 +533,19 @@ namespace Pale_Prince
             _control.GetAction<Wait>("Arc HighLow").time = 1.1f;
 
             // Each arc type has its own antic
-            _control.InsertMethod("Arc Antic", 1, () =>
+            _control.InsertMethod("Arc Antic", 0, () =>
             {
+                #if DEBUG
+                Log
+                (
+                #endif
+                    _control.Fsm.GetFsmFloat("Chooser").Value = _rand.Next(0, 101)
+                #if DEBUG
+                );
+                #else
+                ;
+                #endif
+                    
                 _control.GetAction<Tk2dPlayAnimationWithEvents>("Arc Antic").clipName = _control.Fsm.GetFsmFloat("Chooser").Value <= 50f
                     ? "DartShoot Antic"
                     : "SmallShot Antic";
@@ -529,7 +582,7 @@ namespace Pale_Prince
             {
                 _control.AddAction(state, new FlingObjectsFromGlobalPoolTimeInstantiate
                 {
-                    gameObject = () => HeavyShot,
+                    gameObject = () => _control.Fsm.GetFsmFloat("Chooser").Value <= 50 ? HeavyShotGlow : HeavyShot,
                     spawnPoint = orig.spawnPoint,
                     position = orig.position,
                     frequency = orig.frequency.Value,
