@@ -265,14 +265,12 @@ namespace Pale_Prince
             {
                 if (_hm.hp             > HP * 2 / 3) yield break;
                 if (_rand.Next(0, 2) == 0) yield break;
-
-                yield return new WaitForSeconds(.20f);
-                
-                if(_control.ActiveStateName != "Dash") yield break;
                 
                 psr.material.shader = Shader.Find("Particles/Multiply");
                 main.startColor = Color.black;
 
+                yield return new WaitForSeconds(.20f);
+                
                 _anim.Stop();
 
                 _trail.Pause();
@@ -291,6 +289,8 @@ namespace Pale_Prince
             _control.ChangeTransition("Tele Out Dash", "FINISHED", "TelePos DashOut");
             _control.ChangeTransition("TelePos DashOut", "FINISHED", "Tele In Dash");
             _control.ChangeTransition("Tele In Dash", "FINISHED", "Dash Continue");
+
+            _control.GetAction<SetStringValue>("TelePos DashOut").stringValue = "DASH";
 
             _control.CreateState("Dash Continue");
 
