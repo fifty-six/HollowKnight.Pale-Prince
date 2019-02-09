@@ -263,6 +263,14 @@ namespace Pale_Prince
             
             IEnumerator TeleOut()
             {
+                // After Tele can transition here if the Tele fails so I want to reset the trail regardless.
+                if (main.startColor.color == Color.black)
+                {
+                    psr.material.shader = Shader.Find("Particles/Additive");
+                    main.startColor = Color.white;
+                    _trail.Play();
+                }
+
                 if (_hm.hp             > HP * 2 / 3) yield break;
                 if (_rand.Next(0, 2) == 0) yield break;
                 
@@ -290,9 +298,7 @@ namespace Pale_Prince
             _control.ChangeTransition("TelePos DashOut", "FINISHED", "Tele In Dash");
             _control.ChangeTransition("Tele In Dash", "FINISHED", "Dash Continue");
 
-            _control.GetAction<SetStringValue>("TelePos DashOut").stringValue = "DASH TELE";
-            
-            _control.AddTransition("After Tele", "DASH TELE", "Dash Continue");
+            _control.GetAction<SetStringValue>("TelePos DashOut").stringValue = "DASH";
             
             _control.CreateState("Dash Continue");
 
