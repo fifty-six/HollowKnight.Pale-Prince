@@ -290,8 +290,10 @@ namespace Pale_Prince
             _control.ChangeTransition("TelePos DashOut", "FINISHED", "Tele In Dash");
             _control.ChangeTransition("Tele In Dash", "FINISHED", "Dash Continue");
 
-            _control.GetAction<SetStringValue>("TelePos DashOut").stringValue = "DASH";
-
+            _control.GetAction<SetStringValue>("TelePos DashOut").stringValue = "DASH TELE";
+            
+            _control.AddTransition("After Tele", "DASH TELE", "Dash Continue");
+            
             _control.CreateState("Dash Continue");
 
             IEnumerator ResumeDash()
