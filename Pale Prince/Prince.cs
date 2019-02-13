@@ -163,6 +163,8 @@ namespace Pale_Prince
             while (HeroController.instance == null)
                 yield return null;
 
+            if (!PlayerData.instance.statueStateHollowKnight.usingAltVersion) yield break;
+
             Destroy(_stuns);
 
             _control.Fsm.GetFsmFloat("Idle Time Min").Value = 0f;
@@ -255,14 +257,18 @@ namespace Pale_Prince
 
             Log("Done.");
         }
-
+        
         private void AddDashTele()
         {
             ParticleSystem.MainModule main = _trail.main;
             var psr = _trail.GetComponent<ParticleSystemRenderer>();
+
+            bool tele = false;
             
             IEnumerator TeleOut()
             {
+                tele = false;
+                
                 // After Tele can transition here if the Tele fails so I want to reset the trail regardless.
                 if (main.startColor.color == Color.black)
                 {
@@ -273,6 +279,8 @@ namespace Pale_Prince
 
                 if (_hm.hp             > HP * 2 / 3) yield break;
                 if (_rand.Next(0, 2) == 0) yield break;
+
+                tele = true;
                 
                 psr.material.shader = Shader.Find("Particles/Multiply");
                 main.startColor = Color.black;
@@ -285,6 +293,23 @@ namespace Pale_Prince
 
                 _control.SetState("Tele Out Dash");
             }
+
+            _control.CreateState("Dash Wall");
+
+            // ReSharper disable once ImplicitlyCapturedClosure
+            void ConditionalEvent()
+            {
+                if (tele)
+                {
+                    _control.SetState("Tele Out Dash");
+                }
+            }
+
+            _control.AddMethod("Dash Wall", ConditionalEvent);
+            
+            _control.ChangeTransition("Dash", "WALL", "Dash Wall");
+            
+            _control.AddTransition("Dash Wall", FsmEvent.Finished, "Dash Recover");
 
             _control.AddCoroutine("Dash", TeleOut);
 
@@ -673,7 +698,7 @@ namespace Pale_Prince
             Destroy(blast);
         }
 
-        private ParticleSystem AddTrail(GameObject go, float offset = 0, Color? c = null)
+        private static ParticleSystem AddTrail(GameObject go, float offset = 0, Color? c = null)
         {
             var trail = go.AddComponent<ParticleSystem>();
             var rend = trail.GetComponent<ParticleSystemRenderer>();
@@ -714,7 +739,7 @@ namespace Pale_Prince
             collision.radiusScale = .3f;
             collision.collidesWith = 1 << 9;
 
-            gameObject.AddComponent<DamageOnCollision>().Damage = 2;
+            go.AddComponent<DamageOnCollision>().Damage = 2;
 
             return trail;
         }
