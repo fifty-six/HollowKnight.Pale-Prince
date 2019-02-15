@@ -7,7 +7,10 @@ namespace Pale_Prince
     [Serializable]
     public class SaveSettings : IModSettings, ISerializationCallbackReceiver
     {
-        public BossStatue.Completion Completion;
+        public BossStatue.Completion Completion = new BossStatue.Completion
+        {
+            isUnlocked = true
+        };
 
         public bool AltStatue
         {

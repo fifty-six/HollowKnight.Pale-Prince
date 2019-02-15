@@ -1,6 +1,7 @@
 ﻿using System;
 using Modding;
 using JetBrains.Annotations;
+using ModCommon;
 using MonoMod.RuntimeDetour;
 using UnityEngine.SceneManagement;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
@@ -57,9 +58,6 @@ namespace Pale_Prince
                 case "statueStatePure":
                     Settings.Completion = val;
                     break;
-                case nameof(PlayerData.statueStateHollowKnight):
-                    Settings.AltStatue = PlayerData.instance.statueStateHollowKnight.usingAltVersion;
-                    goto default;
                 default:
                     orig(pd, key, val);
                     break;
@@ -82,7 +80,7 @@ namespace Pale_Prince
             switch (key)
             {
                 case "Pale_Name":
-                case "HK_PRIME_MAIN" when _lastScene == "GG_Workshop":
+                case "HK_PRIME_MAIN" when _lastScene == "GG_Workshop" && PlayerData.instance.statueStateHollowKnight.usingAltVersion:
                     return "Pale Prince";
                 case "Pale_Desc":
                     return "Suffer.";
@@ -91,8 +89,10 @@ namespace Pale_Prince
             }
         }
 
-        private static void BeforeSaveGameSave(SaveGameData data)
+        private void BeforeSaveGameSave(SaveGameData data)
         {
+            Settings.AltStatue = PlayerData.instance.statueStateHollowKnight.usingAltVersion;
+            
             PlayerData.instance.statueStateHollowKnight.usingAltVersion = false;
         }
 
