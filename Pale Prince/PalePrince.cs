@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Reflection;
 using Modding;
 using JetBrains.Annotations;
 using ModCommon;
@@ -12,7 +14,13 @@ namespace Pale_Prince
     [UsedImplicitly]
     public class PalePrince : Mod<SaveSettings>, ITogglableMod
     {
-        internal static PalePrince Instance { get; private set; }
+        [PublicAPI]
+        public static PalePrince Instance { get; private set; }
+        
+        public override string GetVersion()
+        {
+            return Assembly.GetAssembly(typeof(PalePrince)).GetName().Version.ToString();
+        }
 
         private string _lastScene;
 
