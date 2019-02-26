@@ -45,7 +45,7 @@ namespace Pale_Prince
         }
 
         private GameObject _heavyShot;
-        
+
         private GameObject HeavyShotGlow
         {
             get
@@ -105,7 +105,7 @@ namespace Pale_Prince
                 _blackShot.GetComponent<tk2dSprite>().color = Color.black;
 
                 ParticleSystem.MainModule main = _blackShot.GetComponentInChildren<ParticleSystem>(true).main;
-                
+
                 main.startColor = Color.black;
 
                 var psrend = _blackShot.GetComponentInChildren<ParticleSystemRenderer>();
@@ -127,7 +127,7 @@ namespace Pale_Prince
         }
 
         private GameObject _blackShot;
-        
+
         private GameObject BlackShotGlow
         {
             get
@@ -137,7 +137,7 @@ namespace Pale_Prince
                 _blackShotGlow = Instantiate(BlackShot);
 
                 GameObject glow = _blackShotGlow.FindGameObjectInChildren("Glow");
-                
+
                 glow.GetComponent<tk2dSprite>().color = Color.white;
                 Destroy(glow.GetComponent<DeactivateAfter2dtkAnimation>());
                 glow.AddComponent<Replay2dtkAnimation>();
@@ -177,7 +177,7 @@ namespace Pale_Prince
             _trail = AddTrail(gameObject, 1.8f);
 
             _hm.hp = HP;
-            
+
             #if DEBUG
             _control.Fsm.GetFsmInt("Half HP").Value = HP;
             _control.Fsm.GetFsmInt("Quarter HP").Value = HP;
@@ -241,7 +241,7 @@ namespace Pale_Prince
             {
                 _anim.GetClipByName(i.Key).fps = i.Value;
             }
-            
+
             #if DEBUG
             foreach (FsmState state in _control.FsmStates)
             {
@@ -257,18 +257,18 @@ namespace Pale_Prince
 
             Log("Done.");
         }
-        
+
         private void AddDashTele()
         {
             ParticleSystem.MainModule main = _trail.main;
             var psr = _trail.GetComponent<ParticleSystemRenderer>();
 
             bool tele = false;
-            
+
             IEnumerator TeleOut()
             {
                 tele = false;
-                
+
                 // After Tele can transition here if the Tele fails so I want to reset the trail regardless.
                 if (main.startColor.color == Color.black)
                 {
@@ -277,16 +277,16 @@ namespace Pale_Prince
                     _trail.Play();
                 }
 
-                if (_hm.hp             > HP * 2 / 3) yield break;
+                if (_hm.hp           > HP * 2 / 3) yield break;
                 if (_rand.Next(0, 2) == 0) yield break;
 
                 tele = true;
-                
+
                 psr.material.shader = Shader.Find("Particles/Multiply");
                 main.startColor = Color.black;
 
                 yield return new WaitForSeconds(.20f);
-                
+
                 _anim.Stop();
 
                 _trail.Pause();
@@ -306,9 +306,9 @@ namespace Pale_Prince
             }
 
             _control.AddMethod("Dash Wall", ConditionalEvent);
-            
+
             _control.ChangeTransition("Dash", "WALL", "Dash Wall");
-            
+
             _control.AddTransition("Dash Wall", FsmEvent.Finished, "Dash Recover");
 
             _control.AddCoroutine("Dash", TeleOut);
@@ -324,14 +324,14 @@ namespace Pale_Prince
             _control.ChangeTransition("Tele In Dash", "FINISHED", "Dash Continue");
 
             _control.GetAction<SetStringValue>("TelePos DashOut").stringValue = "DASH";
-            
+
             _control.CreateState("Dash Continue");
 
             IEnumerator ResumeDash()
             {
                 psr.material.shader = Shader.Find("Particles/Additive");
                 main.startColor = Color.white;
-                
+
                 _trail.Play();
 
                 transform.localScale = transform.localScale.SetX
@@ -574,13 +574,12 @@ namespace Pale_Prince
                 Log
                 (
                 #endif
-                    _control.Fsm.GetFsmFloat("Chooser").Value = _rand.Next(0, 101)
-                #if DEBUG
-                );
-                #else
-                ;
+                _control.Fsm.GetFsmFloat("Chooser").Value = _rand.Next(0, 101)
+                    #if DEBUG
+                )
                 #endif
-                    
+                ;
+
                 _control.GetAction<Tk2dPlayAnimationWithEvents>("Arc Antic").clipName = _control.Fsm.GetFsmFloat("Chooser").Value <= 50f
                     ? "DartShoot Antic"
                     : "SmallShot Antic";
@@ -592,17 +591,17 @@ namespace Pale_Prince
             _control.AddAction("Arc Recover", _control.GetAction<ActivateGameObject>("Tendril Recover"));
 
             string[] choices = {"Choice P3", "Choice P2"};
-            
-            foreach(string state in choices)
+
+            foreach (string state in choices)
             {
                 _control.GetAction<SendRandomEventV3>(state)
-                    .AddToSendRandomEventV3
-                    (
-                        "Arc Antic",
-                        .2f,
-                        1,
-                        5
-                    );
+                        .AddToSendRandomEventV3
+                        (
+                            "Arc Antic",
+                            .2f,
+                            1,
+                            5
+                        );
             }
 
             var lowHighArc = _control.GetAction<FlingObjectsFromGlobalPoolTime>("Arc LowHigh");
@@ -641,12 +640,12 @@ namespace Pale_Prince
         private void AddAlternatePlumes()
         {
             _control.CreateBool("Falling");
-            
+
             _control.AddMethod("Stomp Land", () =>
             {
                 _control.Fsm.GetFsmBool("Falling").Value = _rand.Next(0, 2) == 0;
             });
-            
+
             void GenAlternatePlume()
             {
                 GameObject go = Instantiate(_control.Fsm.GetFsmGameObject("Plume").Value);
@@ -654,15 +653,12 @@ namespace Pale_Prince
                 go.transform.position = new Vector3(go.transform.position.x + 1.85f, 22);
 
                 if (!_control.Fsm.GetFsmBool("Falling").Value) return;
-                
+
                 Destroy(_control.Fsm.GetFsmGameObject("Plume").Value);
 
                 go.GetComponent<tk2dSprite>().color = new Color(.675f, .678f, .686f);
 
-                go.GetComponent<PlayMakerFSM>().InsertMethod("Plume1", 0, () =>
-                {
-                    go.GetOrAddComponent<Rigidbody2D>().gravityScale = .7f;
-                });
+                go.GetOrAddComponent<Rigidbody2D>().gravityScale = .7f;
             }
 
             _control.InsertMethod("Plume Gen", 5, GenAlternatePlume);
