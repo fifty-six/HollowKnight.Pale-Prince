@@ -24,58 +24,36 @@ namespace Pale_Prince
 
         private string _lastScene;
 
-        private Hook _pdGet;
-        private Hook _pdSet;
-
-        public PalePrince() 
-        {
-            typeof(Mod).GetField("Name").SetValue(this, "Pale Prince");
-        }
+        public PalePrince() : base("Pale Prince") {}
 
         public override void Initialize()
         {
             Instance = this;
+            
+            Unload();
             
             ModHooks.Instance.BeforeSavegameSaveHook += BeforeSaveGameSave;
             ModHooks.Instance.AfterSavegameLoadHook += SaveGame;
             ModHooks.Instance.SavegameSaveHook += SaveGameSave;
             ModHooks.Instance.NewGameHook += AddComponent;
             ModHooks.Instance.LanguageGetHook += OnLangGet;
+            ModHooks.Instance.SetPlayerVariableHook += SetVariableHook;
+            ModHooks.Instance.GetPlayerVariableHook += GetVariableHook;
             USceneManager.activeSceneChanged += SceneChanged;
-
-            _pdGet = new Hook
-            (
-                typeof(PlayerData).GetMethod("GetVariable")?.MakeGenericMethod(typeof(BossStatue.Completion)),
-                typeof(PalePrince).GetMethod(nameof(GetVariableHook)),
-                this
-            );
-
-            _pdSet = new Hook
-            (
-                typeof(PlayerData).GetMethod("SetVariable")?.MakeGenericMethod(typeof(BossStatue.Completion)),
-                typeof(PalePrince).GetMethod(nameof(SetVariableHook)),
-                this
-            );
         }
 
-        [UsedImplicitly]
-        public void SetVariableHook(Action<PlayerData, string, BossStatue.Completion> orig, PlayerData pd, string key, BossStatue.Completion val)
+        private object SetVariableHook(Type t, string key, object obj)
         {
-            switch (key)
-            {
-                case "statueStatePure":
-                    Settings.Completion = val;
-                    break;
-                default:
-                    orig(pd, key, val);
-                    break;
-            }
+            if (key == "statueStatePure")
+                Settings.Completion = (BossStatue.Completion) obj;
+            return obj;
         }
 
-        [UsedImplicitly]
-        public BossStatue.Completion GetVariableHook(Func<PlayerData, string, BossStatue.Completion> orig, PlayerData pd, string key)
+        private object GetVariableHook(Type t, string key, object orig)
         {
-            return key == "statueStatePure" ? Settings.Completion : orig(pd, key);
+            return key == "statueStatePure"
+                ? Settings.Completion
+                : orig;
         }
 
         private void SceneChanged(Scene arg0, Scene arg1)
@@ -127,10 +105,8 @@ namespace Pale_Prince
             ModHooks.Instance.SavegameSaveHook -= SaveGameSave;
             ModHooks.Instance.NewGameHook -= AddComponent;
             ModHooks.Instance.LanguageGetHook -= OnLangGet;
+            ModHooks.Instance.SetPlayerVariableHook -= SetVariableHook;
             USceneManager.activeSceneChanged -= SceneChanged;
-
-            _pdGet?.Dispose();
-            _pdSet?.Dispose();
 
             var finder = GameManager.instance.gameObject.GetComponent<PrinceFinder>();
 
