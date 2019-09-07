@@ -19,17 +19,17 @@ namespace Pale_Prince
 
         private IEnumerator SceneChangeRoutine(Scene prev, Scene next)
         {
-            yield return null;
-            
-            if (next.name == "GG_Workshop") SetStatue();
+            if (next.name == "GG_Workshop") yield return SetStatue();
             if (next.name != "GG_Hollow_Knight") yield break;
             if (prev.name != "GG_Workshop") yield break;
             
             StartCoroutine(AddComponent());
         }
         
-        private static void SetStatue()
+        private static IEnumerator SetStatue()
         {
+            yield return null;
+            
             GameObject statue = GameObject.Find("GG_Statue_HollowKnight");
             
             var scene = ScriptableObject.CreateInstance<BossScene>();
@@ -38,6 +38,8 @@ namespace Pale_Prince
             var bs = statue.GetComponent<BossStatue>();
             bs.dreamBossScene = scene;
             bs.dreamStatueStatePD = "statueStatePure";
+            
+            bs.SetPlaquesVisible(bs.StatueState.isUnlocked && bs.StatueState.hasBeenSeen);
 
             var details = new BossStatue.BossUIDetails();
             details.nameKey = details.nameSheet = "Pale_Name";

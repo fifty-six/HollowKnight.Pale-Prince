@@ -9,8 +9,16 @@ using UObject = UnityEngine.Object;
 namespace Pale_Prince
 {
     [UsedImplicitly]
-    public class PalePrince : Mod<SaveSettings>, ITogglableMod
+    public class PalePrince : Mod, ITogglableMod
     {
+        public override ModSettings SaveSettings
+        {
+            get => _settings;
+            set => _settings = value as SaveSettings ?? _settings;
+        }
+
+        private SaveSettings _settings = new SaveSettings();
+
         [PublicAPI]
         public static PalePrince Instance { get; private set; }
         
@@ -42,19 +50,25 @@ namespace Pale_Prince
         private object SetVariableHook(Type t, string key, object obj)
         {
             if (key == "statueStatePure")
-                Settings.Completion = (BossStatue.Completion) obj;
+                _settings.Completion = (BossStatue.Completion) obj;
             return obj;
         }
 
         private object GetVariableHook(Type t, string key, object orig)
         {
             return key == "statueStatePure"
-                ? Settings.Completion
+                ? _settings.Completion
                 : orig;
         }
 
         private void SceneChanged(Scene arg0, Scene arg1)
         {
+            // API Issue.
+            if (arg1.name == Constants.MENU_SCENE)
+            {
+                _settings = new SaveSettings();
+            }
+            
             _lastScene = arg0.name;
         }
 
@@ -74,7 +88,7 @@ namespace Pale_Prince
 
         private void BeforeSaveGameSave(SaveGameData data)
         {
-            Settings.AltStatue = PlayerData.instance.statueStateHollowKnight.usingAltVersion;
+            _settings.AltStatue = PlayerData.instance.statueStateHollowKnight.usingAltVersion;
             
             PlayerData.instance.statueStateHollowKnight.usingAltVersion = false;
         }
@@ -87,7 +101,7 @@ namespace Pale_Prince
         
         private void SaveGameSave(int id = 0)
         {
-            PlayerData.instance.statueStateHollowKnight.usingAltVersion = Settings.AltStatue;
+            PlayerData.instance.statueStateHollowKnight.usingAltVersion = _settings.AltStatue;
         }
 
         private static void AddComponent()
