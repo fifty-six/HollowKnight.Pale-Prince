@@ -8,6 +8,7 @@
         <Copyright>Copyright © 2018</Copyright>
         <OutputPath>bin\$(Configuration)\</OutputPath>
         <Version>2.0.0</Version>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <ItemGroup>
         <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">

@@ -1,8 +1,6 @@
 ﻿using System.Collections;
 using System.Reflection;
-using HutongGames.PlayMaker.Actions;
 using ModCommon;
-using ModCommon.Util;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Logger = Modding.Logger;
@@ -17,12 +15,16 @@ namespace Pale_Prince
             USceneManager.activeSceneChanged += SceneChanged;
         }
 
-        private void SceneChanged(Scene arg0, Scene arg1)
-        {
-            if (arg1.name == "GG_Workshop") SetStatue();
-            if (arg1.name != "GG_Hollow_Knight") return;
-            if (arg0.name != "GG_Workshop") return;
+        private void SceneChanged(Scene arg0, Scene arg1) => StartCoroutine(SceneChangeRoutine(arg0, arg1));
 
+        private IEnumerator SceneChangeRoutine(Scene prev, Scene next)
+        {
+            yield return null;
+            
+            if (next.name == "GG_Workshop") SetStatue();
+            if (next.name != "GG_Hollow_Knight") yield break;
+            if (prev.name != "GG_Workshop") yield break;
+            
             StartCoroutine(AddComponent());
         }
         

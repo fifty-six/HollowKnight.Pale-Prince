@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Reflection;
 using Modding;
 using JetBrains.Annotations;
-using ModCommon;
-using MonoMod.RuntimeDetour;
 using UnityEngine.SceneManagement;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 using UObject = UnityEngine.Object;

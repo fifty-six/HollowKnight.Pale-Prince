@@ -1,7 +1,8 @@
 ﻿using GlobalEnums;
 using UnityEngine;
 
-namespace Pale_Prince {
+namespace Pale_Prince 
+{
     internal class DamageOnCollision : MonoBehaviour
     {
         public int Damage { private get; set; } = 1;

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Pale_Prince
 {
     [Serializable]
-    public class SaveSettings : IModSettings, ISerializationCallbackReceiver
+    public class SaveSettings : ModSettings, ISerializationCallbackReceiver
     {
         public BossStatue.Completion Completion = new BossStatue.Completion
         {
