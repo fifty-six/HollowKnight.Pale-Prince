@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Reflection;
 using ModCommon;
+using MonoMod.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Logger = Modding.Logger;
@@ -10,61 +12,84 @@ namespace Pale_Prince
 {
     internal class PrinceFinder : MonoBehaviour
     {
+        private static readonly FastReflectionDelegate _updateDelegate = typeof(BossStatue)
+                                                                         .GetMethod
+                                                                         (
+                                                                             "UpdateDetails",
+                                                                             BindingFlags.NonPublic | BindingFlags.Instance
+                                                                         )
+                                                                         .GetFastDelegate();
+
         private void Start()
         {
             USceneManager.activeSceneChanged += SceneChanged;
         }
 
-        private void SceneChanged(Scene arg0, Scene arg1) => StartCoroutine(SceneChangeRoutine(arg0, arg1));
+        private void SceneChanged(Scene arg0, Scene arg1) => StartCoroutine(SceneChangeRoutine(arg0.name, arg1.name));
 
-        private IEnumerator SceneChangeRoutine(Scene prev, Scene next)
+        private IEnumerator SceneChangeRoutine(string prev, string next)
         {
-            if (next.name == "GG_Workshop") yield return SetStatue();
-            if (next.name != "GG_Hollow_Knight") yield break;
-            if (prev.name != "GG_Workshop") yield break;
-            
+            if (next == "GG_Workshop") yield return SetStatue();
+            if (next != "GG_Hollow_Knight") yield break;
+            if (prev != "GG_Workshop") yield break;
+
             StartCoroutine(AddComponent());
         }
-        
+
         private static IEnumerator SetStatue()
         {
             yield return null;
-            
+
             GameObject statue = GameObject.Find("GG_Statue_HollowKnight");
-            
+
             var scene = ScriptableObject.CreateInstance<BossScene>();
             scene.sceneName = "GG_Hollow_Knight";
-            
+
             var bs = statue.GetComponent<BossStatue>();
             bs.dreamBossScene = scene;
             bs.dreamStatueStatePD = "statueStatePure";
-            
+
             bs.SetPlaquesVisible(bs.StatueState.isUnlocked && bs.StatueState.hasBeenSeen);
 
             var details = new BossStatue.BossUIDetails();
             details.nameKey = details.nameSheet = "Pale_Name";
             details.descriptionKey = details.descriptionSheet = "Pale_Desc";
             bs.dreamBossDetails = details;
-            
+
             GameObject @switch = statue.FindGameObjectInChildren("dream_version_switch");
             @switch.SetActive(true);
             @switch.transform.position = new Vector3(185.1f, 36.5f, 0.4f);
-            
+
             GameObject burst = @switch.FindGameObjectInChildren("Burst Pt");
             burst.transform.position = new Vector3(183.7f, 36.3f, 0.4f);
 
             GameObject glow = @switch.FindGameObjectInChildren("Base Glow");
             glow.transform.position = new Vector3(183.7f, 36.3f, 0.4f);
-            
+
             glow.GetComponent<tk2dSprite>().color = Color.white;
 
             var fader = glow.GetComponent<ColorFader>();
-            fader.upColour = Color.black;
+            fader.upColour = Color.white;
             fader.downColour = Color.white;
-            
-            var toggle = statue.GetComponentInChildren<BossStatueDreamToggle>();
-            toggle.SetOwner(bs);
+
+            var toggle = statue.GetComponentInChildren<BossStatueDreamToggle>(true);
+
             toggle.SetState(true);
+
+            Modding.ReflectionHelper.SetAttr
+            (
+                toggle,
+                "colorFaders",
+                toggle.litPieces.GetComponentsInChildren<ColorFader>(true)
+            );
+            
+            toggle.SetOwner(bs);
+
+            yield return new WaitWhile(() => bs.bossUIControlFSM == null);
+
+            _updateDelegate(bs);
+
+            Log(bs.bossUIControlFSM.Fsm.GetFsmString("Boss Name Key"));
         }
 
         private static IEnumerator AddComponent()
