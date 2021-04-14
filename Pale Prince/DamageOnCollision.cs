@@ -1,4 +1,4 @@
-﻿using GlobalEnums;
+using GlobalEnums;
 using UnityEngine;
 
 namespace Pale_Prince 

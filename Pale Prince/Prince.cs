@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using HutongGames.PlayMaker;
 using HutongGames.PlayMaker.Actions;
-using ModCommon;
 using UnityEngine;
+using Vasi;
 using Random = System.Random;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 
@@ -114,13 +114,13 @@ namespace Pale_Prince
                 {
                     color = Color.black,
                     // Particles/Multiply adds up to black, Particles/Additive adds up to white.
-                    shader = Shader.Find("Particles/Multiply")
+                    shader = Shader.Find("Legacy Shaders/Particles/Multiply")
                 };
 
                 // Disabling this won't work for some reason, so we just set it transparent.
-                _blackShot.FindGameObjectInChildren("Beam").GetComponent<tk2dSprite>().color = new Color(0, 0, 0, 0);
+                _blackShot.Child("Beam").GetComponent<tk2dSprite>().color = new Color(0, 0, 0, 0);
 
-                _blackShot.FindGameObjectInChildren("Glow").GetComponent<tk2dSprite>().color = Color.black;
+                _blackShot.Child("Glow").GetComponent<tk2dSprite>().color = Color.black;
 
                 return _blackShot;
             }
@@ -136,7 +136,7 @@ namespace Pale_Prince
 
                 _blackShotGlow = Instantiate(BlackShot);
 
-                GameObject glow = _blackShotGlow.FindGameObjectInChildren("Glow");
+                GameObject glow = _blackShotGlow.Child("Glow");
 
                 glow.GetComponent<tk2dSprite>().color = Color.white;
                 Destroy(glow.GetComponent<DeactivateAfter2dtkAnimation>());
@@ -189,14 +189,14 @@ namespace Pale_Prince
 
             for (int i = 0; i < 3; i++)
             {
-                _control.RemoveAction<IntOperator>("Set Phase HP");
+                _control.GetState("Set Phase HP").RemoveAction<IntOperator>();
             }
 
-            _control.InsertMethod("Tele Out", 0, () => { _trail.Pause(); });
+            _control.GetState("Tele Out").InsertMethod(0, () => _trail.Pause());
 
             foreach (string state in new string[] {"Tele In", "Tele Cancel"})
             {
-                _control.InsertMethod(state, 0, () => { _trail.Play(); });
+                _control.GetState(state).InsertMethod(0, () => _trail.Play());
             }
 
             CreateArcs();
@@ -209,25 +209,25 @@ namespace Pale_Prince
                 return () =>
                 {
                     Quaternion angle = Quaternion.Euler(Vector3.zero);
-                    Vector3 pos = transform.position;
-                    float x = speed * Math.Sign(transform.localScale.x);
+                    (float x, float y, float z) = transform.position;
+                    float vx = speed * Math.Sign(transform.localScale.x);
 
                     for (float i = 0; i <= 3; i += 1.5f)
                     {
-                        Instantiate(proj?.Invoke(), pos.SetY(pos.y - i), angle)
+                        Instantiate(proj?.Invoke(), new Vector3(x, y - i, z), angle)
                             .GetComponent<Rigidbody2D>()
-                            .velocity = new Vector2(x, 0);
+                            .velocity = new Vector2(vx, 0);
                     }
                 };
             }
 
-            _control.InsertMethod("Slash1", 0, ProjectileSpawner(() => SilentShot, 30f));
+            _control.GetState("Slash1").InsertMethod(0, ProjectileSpawner(() => SilentShot, 30f));
 
-            _control.InsertMethod("Tendril Start", 0, ProjectileSpawner(() => BlackShot, 40f));
+            _control.GetState("Tendril Start").InsertMethod(0, ProjectileSpawner(() => BlackShot, 40f));
 
             AddAlternatePlumes();
 
-            _control.InsertCoroutine("SmallShot Antic", 0, ShotTeleInBurst, false);
+            _control.GetState("SmallShot Antic").InsertCoroutine(0, ShotTeleInBurst, false);
 
             _control.GetAction<Wait>("Tendril Burst").time.Value /= 1.5f;
 
@@ -245,8 +245,11 @@ namespace Pale_Prince
             #if DEBUG
             foreach (FsmState state in _control.FsmStates)
             {
-                _control.InsertMethod(state.Name, 0, () => Log($"Start: {state.Name}"));
-                _control.InsertMethod(state.Name, state.Actions.Length, () => Log($"End: {state.Name}"));
+                state.InsertMethod(0, () => Log($"Start: {state.Name}"));
+                state.InsertMethod(state.Actions.Length, () => {
+                    Log($"End: {state.Name}");
+                    Log($"Transitioning to: {state.Transitions.FirstOrDefault(x => x.FsmEvent == FsmEvent.Finished)?.ToFsmState?.Name ?? "null"}");
+                });
             }
             
             foreach (tk2dSpriteAnimationClip clip in _anim.Library.clips)
@@ -272,17 +275,17 @@ namespace Pale_Prince
                 // After Tele can transition here if the Tele fails so I want to reset the trail regardless.
                 if (main.startColor.color == Color.black)
                 {
-                    psr.material.shader = Shader.Find("Particles/Additive");
+                    psr.material.shader = Shader.Find("Legacy Shaders/Particles/Additive");
                     main.startColor = Color.white;
                     _trail.Play();
                 }
 
-                if (_hm.hp           > HP * 2 / 3) yield break;
+                if (_hm.hp > HP * 2 / 3) yield break;
                 if (_rand.Next(0, 2) == 0) yield break;
 
                 tele = true;
 
-                psr.material.shader = Shader.Find("Particles/Multiply");
+                psr.material.shader = Shader.Find("Legacy Shaders/Particles/Multiply");
                 main.startColor = Color.black;
 
                 yield return new WaitForSeconds(.20f);
@@ -305,40 +308,47 @@ namespace Pale_Prince
                 }
             }
 
-            _control.AddMethod("Dash Wall", ConditionalEvent);
+            FsmState dashWall = _control.GetState("Dash Wall");
+            FsmState dash = _control.GetState("Dash");
+
+            dashWall.AddMethod(ConditionalEvent);
 
             _control.ChangeTransition("Dash", "WALL", "Dash Wall");
 
-            _control.AddTransition("Dash Wall", FsmEvent.Finished, "Dash Recover");
+            dashWall.AddTransition(FsmEvent.Finished, "Dash Recover");
 
-            _control.AddCoroutine("Dash", TeleOut);
+            dash.AddCoroutine(TeleOut);
 
             _control.CopyState("Tele Out", "Tele Out Dash");
             _control.CopyState("TelePos Slash", "TelePos DashOut");
             _control.CopyState("Tele In", "Tele In Dash");
-
-            _control.AddTransition("Dash", "TELE", "Tele Out Dash");
-
+            
+            dash.AddTransition("TELE", "Tele Out Dash");
+            
+            var dashCont = _control.CreateState("Dash Continue");
+            
             _control.ChangeTransition("Tele Out Dash", "FINISHED", "TelePos DashOut");
             _control.ChangeTransition("TelePos DashOut", "FINISHED", "Tele In Dash");
             _control.ChangeTransition("Tele In Dash", "FINISHED", "Dash Continue");
 
             _control.GetAction<SetStringValue>("TelePos DashOut").stringValue = "DASH";
 
-            _control.CreateState("Dash Continue");
-
             IEnumerator ResumeDash()
             {
-                psr.material.shader = Shader.Find("Particles/Additive");
+                psr.material.shader = Shader.Find("Legacy Shaders/Particles/Additive");
                 main.startColor = Color.white;
 
                 _trail.Play();
 
-                transform.localScale = transform.localScale.SetX
+                Vector3 scale = transform.localScale;
+
+                scale.x =
                 (
                     Math.Abs(transform.localScale.x) *
                     Math.Sign(HeroController.instance.transform.position.x - transform.position.x)
                 );
+                
+                transform.localScale = scale;
 
                 gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(60 * Math.Sign(transform.localScale.x), 0);
 
@@ -349,9 +359,9 @@ namespace Pale_Prince
                 _anim.Stop();
             }
 
-            _control.InsertCoroutine("Dash Continue", 0, ResumeDash);
+            dashCont.InsertCoroutine(0, ResumeDash);
 
-            _control.AddTransition("Dash Continue", FsmEvent.Finished, "Dash Recover");
+            dashCont.AddTransition(FsmEvent.Finished, "Dash Recover");
         }
 
         private void AddChestShot()
@@ -366,13 +376,13 @@ namespace Pale_Prince
                 "ChestShot Recover"
             };
 
-            for (int i = 0; i < states.Length; i++)
+            for (int i = states.Length - 1; i >= 0; i--)
             {
-                string state = states[i];
+                string stName = states[i];
 
-                _control.CreateState(state);
+                FsmState state = _control.CreateState(stName);
 
-                _control.AddTransition(state, FsmEvent.Finished, i + 1 < states.Length
+                state.AddTransition(FsmEvent.Finished, i + 1 < states.Length
                                            ? states[i + 1]
                                            : "Idle Stance"
                 );
@@ -387,14 +397,15 @@ namespace Pale_Prince
                 yield return new WaitForSeconds(_anim.GetClipByName("ChestShot Antic").Duration);
             }
 
-            _control.InsertCoroutine("ChestShot Antic", 0, ChestShotAntic);
+            _control.GetState("ChestShot Antic").InsertCoroutine(0, ChestShotAntic);
 
             IEnumerator ChestShotRise()
             {
                 _anim.Play("ChestShot");
+                
                 gameObject.GetComponent<Rigidbody2D>().gravityScale = 0f;
-                gameObject.FindGameObjectInChildren("Idle").SetActive(false);
-                gameObject.FindGameObjectInChildren("ChestShot").SetActive(true);
+                gameObject.Child("Colliders/Idle").SetActive(false);
+                gameObject.Child("Colliders/ChestShot").SetActive(true);
                 GameCameras.instance.cameraShakeFSM.SendEvent("EnemyKillShake");
 
                 var rb = gameObject.GetComponent<Rigidbody2D>();
@@ -411,13 +422,18 @@ namespace Pale_Prince
                 }
 
                 rb.velocity = Vector3.zero;
+                
+                // Can get interrupted by parrying previous attack during rise
+                // So we ensure that the animation changes by the end
+                if (!_anim.IsPlaying("ChestShot"))
+                    _anim.Play("ChestShot");
 
                 _trail.Play();
 
                 yield return new WaitForSeconds(0.85f);
             }
 
-            _control.InsertCoroutine("ChestShot Rise", 0, ChestShotRise);
+            _control.GetState("ChestShot Rise").InsertCoroutine(0, ChestShotRise);
 
             IEnumerator ChestShot()
             {
@@ -446,11 +462,13 @@ namespace Pale_Prince
                 }
             }
 
-            _control.InsertCoroutine("ChestShot", 0, ChestShot);
+            _control.GetState("ChestShot").InsertCoroutine(0, ChestShot);
 
-            _control.InsertMethod("ChestShot Pause", 0, () => { GameCameras.instance.cameraShakeFSM.Fsm.GetFsmBool("RumblingMed").Value = false; });
+            var pause = _control.GetState("ChestShot Pause");
 
-            _control.AddAction("ChestShot Pause", new Wait
+            pause.InsertMethod(0, () => GameCameras.instance.cameraShakeFSM.Fsm.GetFsmBool("RumblingMed").Value = false);
+
+            pause.AddAction(new Wait
             {
                 time = 0.75f,
                 finishEvent = FsmEvent.Finished
@@ -468,38 +486,43 @@ namespace Pale_Prince
                 }
             }
 
-            _control.InsertCoroutine("ChestShot Fall", 0, ChestShotFall);
+            _control.GetState("ChestShot Fall").InsertCoroutine(0, ChestShotFall);
 
             IEnumerator ChestShotRecover()
             {
                 _anim.Play("FallToStun");
                 GameCameras.instance.cameraShakeFSM.SendEvent("AverageShake");
-                gameObject.FindGameObjectInChildren("Stun").SetActive(true);
+                gameObject.Child("Colliders/Stun").SetActive(true);
 
                 yield return new WaitForSeconds(2);
 
                 _anim.Play("StunToIdle");
-                gameObject.FindGameObjectInChildren("Stun").SetActive(false);
-                gameObject.FindGameObjectInChildren("Idle").SetActive(true);
+                gameObject.Child("Colliders/Stun").SetActive(false);
+                gameObject.Child("Colliders/Idle").SetActive(true);
 
                 yield return new WaitForSeconds(_anim.GetClipByName("StunToIdle").Duration);
             }
 
-            _control.InsertCoroutine("ChestShot Recover", 0, ChestShotRecover);
+            _control.GetState("ChestShot Recover").InsertCoroutine(0, ChestShotRecover);
 
             _control.GetAction<SendRandomEventV3>("Choice P3").AddToSendRandomEventV3("ChestShot Antic", .2f, 1, 5);
         }
 
         private void CreateHighLow()
         {
-            foreach (string state in new string[] {"L Wave", "R Wave"})
+            foreach (string stName in new string[] {"L Wave", "R Wave"})
             {
-                _control.GetAction<SetFloatValue>(state, 1).floatValue = (state.StartsWith("R") ? 1 : -1) * 180;
-                _control.GetAction<SetFloatValue>(state, 6).floatValue = (state.StartsWith("R") ? -1 : 1) * 180;
-                _control.RemoveAction(state, 3);
+                FsmState state = _control.GetState(stName);
+                
+                state.GetAction<SetFloatValue>(1).floatValue = (stName.StartsWith("R") ? 1 : -1) * 180;
+                state.GetAction<SetFloatValue>(6).floatValue = (stName.StartsWith("R") ? -1 : 1) * 180;
+                state.RemoveAction(3);
             }
 
-            _control.GetAction<Wait>("SmallShot LowHigh").time = _control.GetAction<Wait>("SmallShot HighLow").time = .7f;
+            FsmState shotLH = _control.GetState("SmallShot LowHigh");
+            FsmState shotHL = _control.GetState("SmallShot HighLow");
+
+            shotLH.GetAction<Wait>().time = shotHL.GetAction<Wait>().time = .7f;
 
             var highlow = _control.GetAction<FlingObjectsFromGlobalPoolTime>("SmallShot HighLow");
             var lowhigh = _control.GetAction<FlingObjectsFromGlobalPoolTime>("SmallShot LowHigh");
@@ -508,9 +531,10 @@ namespace Pale_Prince
             highlow.speedMax = highlow.speedMin = lowhigh.speedMax;
             highlow.originVariationY.Value *= -1;
 
-            _control.RemoveAction("SmallShot HighLow", 0);
+            shotHL.RemoveAction(0);
 
-            _control.InsertAction("SmallShot HighLow", _control.GetAction("SmallShot LowHigh", 0), 0);
+            // TODO: clarify generic?
+            shotHL.InsertAction(0, shotLH.GetAction<FsmStateAction>(0));
         }
 
         private void CreateArcs()
@@ -528,27 +552,36 @@ namespace Pale_Prince
                 "SmallShot LowHigh"
             };
 
+            static string CloneName(string orig) => "Arc " + orig.Replace("SmallShot ", "");
+
             foreach (string state in states)
             {
-                string CloneName(string orig) => "Arc " + orig.Replace("SmallShot ", "");
-
                 FsmState clone = _control.CopyState(state, CloneName(state));
 
                 #if DEBUG
                 Log("Created state " + clone.Name);
                 #endif
+            }
+            
+            foreach (string state in states)
+            {
+                FsmState clone = _control.GetState(CloneName(state));
 
                 foreach (FsmTransition trans in clone.Transitions)
                 {
-                    if (!states.Contains(trans.ToState)) continue;
-                    _control.ChangeTransition(clone.Name, trans.EventName, CloneName(trans.ToState));
+                    if (!states.Contains(trans.ToState)) 
+                        continue;
+                    
+                    clone.ChangeTransition(trans.EventName, CloneName(trans.ToState));
                 }
             }
 
-            foreach (string state in new string[] {"Arc L Wave", "Arc R Wave"})
+            foreach (string stName in new string[] {"Arc L Wave", "Arc R Wave"})
             {
-                _control.RemoveAction<SendEvent>(state);
-                _control.RemoveAction(state, 2);
+                var state = _control.GetState(stName);
+                
+                state.RemoveAction<SendEvent>();
+                state.RemoveAction(2);
             }
 
             var arcLowHighLAngle = _control.GetAction<RandomFloat>("Arc L Wave");
@@ -568,7 +601,7 @@ namespace Pale_Prince
             _control.GetAction<Wait>("Arc HighLow").time = 1.1f;
 
             // Each arc type has its own antic
-            _control.InsertMethod("Arc Antic", 0, () =>
+            _control.GetState("Arc Antic").InsertMethod(0, () =>
             {
                 #if DEBUG
                 Log
@@ -587,8 +620,8 @@ namespace Pale_Prince
 
             // Tendril-esque antic
             _control.GetAction<Tk2dPlayAnimation>("Arc Start").clipName = "SmallShot";
-            _control.AddAction("Arc Start", _control.GetAction<ActivateGameObject>("Tendril Burst"));
-            _control.AddAction("Arc Recover", _control.GetAction<ActivateGameObject>("Tendril Recover"));
+            _control.GetState("Arc Start").AddAction(_control.GetAction<ActivateGameObject>("Tendril Burst"));
+            _control.GetState("Arc Recover").AddAction(_control.GetAction<ActivateGameObject>("Tendril Recover"));
 
             string[] choices = {"Choice P3", "Choice P2"};
 
@@ -604,17 +637,20 @@ namespace Pale_Prince
                         );
             }
 
-            var lowHighArc = _control.GetAction<FlingObjectsFromGlobalPoolTime>("Arc LowHigh");
-            var highLowArc = _control.GetAction<FlingObjectsFromGlobalPoolTime>("Arc HighLow");
+            FsmState arcLH = _control.GetState("Arc LowHigh");
+            FsmState arcHL = _control.GetState("Arc HighLow");
 
-            lowHighArc.frequency = highLowArc.frequency = highLowArc.frequency.Value / 3f;
+            var lhFling = arcLH.GetAction<FlingObjectsFromGlobalPoolTime>();
+            var hlFling = arcHL.GetAction<FlingObjectsFromGlobalPoolTime>();
 
-            _control.RemoveAction<FlingObjectsFromGlobalPoolTime>("Arc LowHigh");
-            _control.RemoveAction<FlingObjectsFromGlobalPoolTime>("Arc HighLow");
+            lhFling.frequency = hlFling.frequency = hlFling.frequency.Value / 3f;
 
-            void CloneFling(FlingObjectsFromGlobalPoolTime orig, string state)
+            arcLH.RemoveAction<FlingObjectsFromGlobalPoolTime>();
+            arcHL.RemoveAction<FlingObjectsFromGlobalPoolTime>();
+
+            void CloneFling(FlingObjectsFromGlobalPoolTime orig, FsmState state)
             {
-                _control.AddAction(state, new FlingObjectsFromGlobalPoolTimeInstantiate
+                state.AddAction(new FlingObjectsFromGlobalPoolTimeInstantiate
                 {
                     gameObject = () => _control.Fsm.GetFsmFloat("Chooser").Value <= 50 ? HeavyShotGlow : HeavyShot,
                     spawnPoint = orig.spawnPoint,
@@ -631,17 +667,17 @@ namespace Pale_Prince
                 });
             }
 
-            CloneFling(lowHighArc, "Arc LowHigh");
-            CloneFling(highLowArc, "Arc HighLow");
+            CloneFling(lhFling, arcLH);
+            CloneFling(hlFling, arcHL);
 
-            _control.GetAction<Wait>("Arc LowHigh").time = _control.GetAction<Wait>("Arc HighLow").time;
+            arcLH.GetAction<Wait>().time = arcHL.GetAction<Wait>().time;
         }
 
         private void AddAlternatePlumes()
         {
             _control.CreateBool("Falling");
 
-            _control.AddMethod("Stomp Land", () =>
+            _control.GetState("Stomp Land").AddMethod(() =>
             {
                 _control.Fsm.GetFsmBool("Falling").Value = _rand.Next(0, 2) == 0;
             });
@@ -658,11 +694,13 @@ namespace Pale_Prince
 
                 go.GetComponent<tk2dSprite>().color = new Color(.675f, .678f, .686f);
 
-                go.GetOrAddComponent<Rigidbody2D>().gravityScale = .7f;
+                go.AddComponent<Rigidbody2D>().gravityScale = .7f;
             }
 
-            _control.InsertMethod("Plume Gen", 5, GenAlternatePlume);
-            _control.InsertMethod("Plume Gen", 3, GenAlternatePlume);
+            var plumeGen = _control.GetState("Plume Gen");
+            
+            plumeGen.InsertMethod(5, GenAlternatePlume);
+            plumeGen.InsertMethod(3, GenAlternatePlume);
         }
 
         private IEnumerator ShotTeleInBurst()
@@ -698,10 +736,12 @@ namespace Pale_Prince
         {
             var trail = go.AddComponent<ParticleSystem>();
             var rend = trail.GetComponent<ParticleSystemRenderer>();
-
-            rend.material = rend.trailMaterial = new Material(Shader.Find("Particles/Additive"))
+            
+            rend.material = rend.trailMaterial = new Material(Shader.Find("Legacy Shaders/Particles/Additive"))
             {
-                mainTexture = Resources.FindObjectsOfTypeAll<Texture>().FirstOrDefault(x => x.name == "Default-Particle"),
+                mainTexture = Resources
+                              .FindObjectsOfTypeAll<Texture>()
+                              .FirstOrDefault(x => x.name == "Default-Particle"),
                 color = c ?? Color.white
             };
 

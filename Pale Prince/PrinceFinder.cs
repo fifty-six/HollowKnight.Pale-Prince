@@ -1,10 +1,9 @@
-﻿using System;
 using System.Collections;
 using System.Reflection;
-using ModCommon;
 using MonoMod.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Vasi;
 using Logger = Modding.Logger;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 
@@ -12,13 +11,10 @@ namespace Pale_Prince
 {
     internal class PrinceFinder : MonoBehaviour
     {
-        private static readonly FastReflectionDelegate _updateDelegate = typeof(BossStatue)
-                                                                         .GetMethod
-                                                                         (
-                                                                             "UpdateDetails",
-                                                                             BindingFlags.NonPublic | BindingFlags.Instance
-                                                                         )
-                                                                         .GetFastDelegate();
+        private static readonly FastReflectionDelegate _updateDelegate =
+            typeof(BossStatue)
+                .GetMethod("UpdateDetails", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetFastDelegate();
 
         private void Start()
         {
@@ -56,14 +52,14 @@ namespace Pale_Prince
             details.descriptionKey = details.descriptionSheet = "Pale_Desc";
             bs.dreamBossDetails = details;
 
-            GameObject @switch = statue.FindGameObjectInChildren("dream_version_switch");
+            GameObject @switch = statue.Child("dream_version_switch");
             @switch.SetActive(true);
             @switch.transform.position = new Vector3(185.1f, 36.5f, 0.4f);
 
-            GameObject burst = @switch.FindGameObjectInChildren("Burst Pt");
+            GameObject burst = @switch.Child("lit_pieces/Burst Pt");
             burst.transform.position = new Vector3(183.7f, 36.3f, 0.4f);
 
-            GameObject glow = @switch.FindGameObjectInChildren("Base Glow");
+            GameObject glow = @switch.Child("lit_pieces/Base Glow");
             glow.transform.position = new Vector3(183.7f, 36.3f, 0.4f);
 
             glow.GetComponent<tk2dSprite>().color = Color.white;
@@ -82,7 +78,7 @@ namespace Pale_Prince
                 "colorFaders",
                 toggle.litPieces.GetComponentsInChildren<ColorFader>(true)
             );
-            
+
             toggle.SetOwner(bs);
 
             yield return new WaitWhile(() => bs.bossUIControlFSM == null);
