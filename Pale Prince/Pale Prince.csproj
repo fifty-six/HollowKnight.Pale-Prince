@@ -15,7 +15,7 @@
         <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
           <HintPath>..\..\..\References\Assembly-CSharp.dll</HintPath>
         </Reference>
-        <Reference Include="MonoMod.Utils, Version=21.1.11.1, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="MonoMod.Utils, Version=21.4.29.1, Culture=neutral, PublicKeyToken=null">
           <HintPath>..\..\..\References\MonoMod.Utils.dll</HintPath>
         </Reference>
         <Reference Include="PlayMaker, Version=1.6.0.0, Culture=neutral, PublicKeyToken=null">
@@ -48,7 +48,7 @@
         <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
           <HintPath>..\..\..\References\UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
-        <Reference Include="Vasi, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="Vasi, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null">
           <HintPath>..\..\..\References\Mods\Vasi.dll</HintPath>
         </Reference>
     </ItemGroup>

@@ -1,10 +1,9 @@
 using System;
-using Modding;
 
 namespace Pale_Prince
 {
     [Serializable]
-    public class SaveSettings : ModSettings
+    public class SaveSettings
     {
         public BossStatue.Completion Completion = new()
         {

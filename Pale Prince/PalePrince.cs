@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using Modding;
 using JetBrains.Annotations;
 using UnityEngine.SceneManagement;
@@ -9,23 +8,18 @@ using UObject = UnityEngine.Object;
 namespace Pale_Prince
 {
     [UsedImplicitly]
-    public class PalePrince : Mod, ITogglableMod
+    public class PalePrince : Mod, ITogglableMod, ILocalSettings<SaveSettings>
     {
-        public override ModSettings SaveSettings
-        {
-            get => _settings;
-            set => _settings = value as SaveSettings ?? _settings;
-        }
-
-        private SaveSettings _settings = new SaveSettings();
-
         [PublicAPI]
         public static PalePrince Instance { get; private set; }
+
+        private SaveSettings _settings;
+
+        public void OnLoadLocal(SaveSettings s) => _settings = s;
         
-        public override string GetVersion()
-        {
-            return Assembly.GetAssembly(typeof(PalePrince)).GetName().Version.ToString();
-        }
+        public SaveSettings OnSaveLocal() => _settings;
+        
+        public override string GetVersion() => Vasi.VersionUtil.GetVersion<PalePrince>();
 
         private string _lastScene;
 
@@ -37,28 +31,35 @@ namespace Pale_Prince
             
             Unload();
             
-            ModHooks.Instance.BeforeSavegameSaveHook += BeforeSaveGameSave;
-            ModHooks.Instance.AfterSavegameLoadHook += SaveGame;
-            ModHooks.Instance.SavegameSaveHook += SaveGameSave;
-            ModHooks.Instance.NewGameHook += AddComponent;
-            ModHooks.Instance.LanguageGetHook += OnLangGet;
-            ModHooks.Instance.SetPlayerVariableHook += SetVariableHook;
-            ModHooks.Instance.GetPlayerVariableHook += GetVariableHook;
+            ModHooks.BeforeSavegameSaveHook += BeforeSaveGameSave;
+            ModHooks.AfterSavegameLoadHook += SaveGame;
+            ModHooks.SavegameSaveHook += SaveGameSave;
+            ModHooks.NewGameHook += AddComponent;
+            ModHooks.LanguageGetHook += OnLangGet;
+            ModHooks.SetPlayerVariableHook += SetVariableHook;
+            ModHooks.GetPlayerVariableHook += GetVariableHook;
             USceneManager.activeSceneChanged += SceneChanged;
         }
 
+
         private object SetVariableHook(Type t, string key, object obj)
         {
-            if (key == "statueStatePure")
-                _settings.Completion = (BossStatue.Completion) obj;
-            return obj;
-        }
+            if (key != "statueStatePure") 
+                return obj;
 
-        private object GetVariableHook(Type t, string key, object orig)
+            var completion = (BossStatue.Completion) obj;
+            
+            _settings.Completion = completion;
+
+            // Set alt false so if the mod is uninstalled then it doesn't break the mod.
+            completion.usingAltVersion = false;
+
+            return completion;
+        }
+        
+        private object GetVariableHook(Type type, string name, object orig)
         {
-            return key == "statueStatePure"
-                ? _settings.Completion
-                : orig;
+            return name == "statueStatePure" ? _settings.Completion : orig;
         }
 
         private void SceneChanged(Scene arg0, Scene arg1)
@@ -72,7 +73,7 @@ namespace Pale_Prince
             _lastScene = arg0.name;
         }
 
-        private string OnLangGet(string key, string sheettitle)
+        private string OnLangGet(string key, string sheettitle, string orig)
         {
             switch (key)
             {
@@ -82,7 +83,7 @@ namespace Pale_Prince
                 case "Pale_Desc":
                     return "Suffer.";
                 default:
-                    return Language.Language.GetInternal(key, sheettitle);
+                    return orig;
             }
         }
 
@@ -111,12 +112,12 @@ namespace Pale_Prince
 
         public void Unload()
         {
-            ModHooks.Instance.BeforeSavegameSaveHook -= BeforeSaveGameSave;
-            ModHooks.Instance.AfterSavegameLoadHook -= SaveGame;
-            ModHooks.Instance.SavegameSaveHook -= SaveGameSave;
-            ModHooks.Instance.NewGameHook -= AddComponent;
-            ModHooks.Instance.LanguageGetHook -= OnLangGet;
-            ModHooks.Instance.SetPlayerVariableHook -= SetVariableHook;
+            ModHooks.BeforeSavegameSaveHook -= BeforeSaveGameSave;
+            ModHooks.AfterSavegameLoadHook -= SaveGame;
+            ModHooks.SavegameSaveHook -= SaveGameSave;
+            ModHooks.NewGameHook -= AddComponent;
+            ModHooks.LanguageGetHook -= OnLangGet;
+            ModHooks.SetPlayerVariableHook -= SetVariableHook;
             USceneManager.activeSceneChanged -= SceneChanged;
 
             var finder = GameManager.instance.gameObject.GetComponent<PrinceFinder>();

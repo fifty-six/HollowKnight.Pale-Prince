@@ -72,7 +72,7 @@ namespace Pale_Prince
 
             toggle.SetState(true);
 
-            Modding.ReflectionHelper.SetAttr
+            Modding.ReflectionHelper.SetField
             (
                 toggle,
                 "colorFaders",
@@ -84,8 +84,6 @@ namespace Pale_Prince
             yield return new WaitWhile(() => bs.bossUIControlFSM == null);
 
             _updateDelegate(bs);
-
-            Log(bs.bossUIControlFSM.Fsm.GetFsmString("Boss Name Key"));
         }
 
         private static IEnumerator AddComponent()
