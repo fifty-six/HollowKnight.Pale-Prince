@@ -4,16 +4,17 @@ using JetBrains.Annotations;
 using UnityEngine.SceneManagement;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 using UObject = UnityEngine.Object;
+using System.Collections.Generic;
 
 namespace Pale_Prince
 {
     [UsedImplicitly]
-    public class PalePrince : Mod, ITogglableMod, ILocalSettings<SaveSettings>
+    public class PalePrince : Mod, ITogglableMod, ILocalSettings<SaveSettings>,IMenuMod
     {
         [PublicAPI]
         public static PalePrince Instance { get; private set; }
 
-        private SaveSettings _settings;
+        public static SaveSettings _settings;
 
         public void OnLoadLocal(SaveSettings s) => _settings = s;
         
@@ -109,7 +110,33 @@ namespace Pale_Prince
         {
             GameManager.instance.gameObject.AddComponent<PrinceFinder>();
         }
-
+        public bool ToggleButtonInsideMenu => true;
+        public List<IMenuMod.MenuEntry> GetMenuData(IMenuMod.MenuEntry? menu)
+        {
+            List<IMenuMod.MenuEntry> menus = new();
+            menus.Add(
+                new()
+                {
+                    Name = "Enter Pantheon",
+                    Description = "Choose if Pale Prince enable in p4 and p5(choose Pale Prince Statue in hog)",
+                    Values = new string[] { Language.Language.Get("MOH_ON", "MainMenu"), Language.Language.Get("MOH_OFF", "MainMenu") },
+                    Saver = i => ChooseEnter(i),
+                    Loader = () => _settings.BossDoor ? 0 : 1
+                }
+                );
+            return menus;
+        }
+        private void ChooseEnter(int i)
+        {
+            if (i == 0)
+            {
+                _settings.BossDoor = true;
+            }
+            else
+            {
+                _settings.BossDoor = false;
+            }
+        }
         public void Unload()
         {
             ModHooks.BeforeSavegameSaveHook -= BeforeSaveGameSave;

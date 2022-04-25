@@ -27,7 +27,7 @@ namespace Pale_Prince
         {
             if (next == "GG_Workshop") yield return SetStatue();
             if (next != "GG_Hollow_Knight") yield break;
-            if (prev != "GG_Workshop") yield break;
+            if (!PalePrince._settings.BossDoor) yield break;
 
             StartCoroutine(AddComponent());
         }

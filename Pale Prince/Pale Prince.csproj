@@ -10,52 +10,53 @@
         <Version>2.0.0</Version>
         <LangVersion>latest</LangVersion>
         <DebugType>portable</DebugType>
+        <HKModdingPath>D:\HKmod\1.5Moddingapi\</HKModdingPath>
     </PropertyGroup>
     <ItemGroup>
         <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\Assembly-CSharp.dll</HintPath>
+          <HintPath>$(HKModdingPath)Assembly-CSharp.dll</HintPath>
         </Reference>
         <Reference Include="MonoMod.Utils, Version=21.4.29.1, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\MonoMod.Utils.dll</HintPath>
+          <HintPath>$(HKModdingPath)MonoMod.Utils.dll</HintPath>
         </Reference>
         <Reference Include="PlayMaker, Version=1.6.0.0, Culture=neutral, PublicKeyToken=null">
-            <HintPath>..\..\..\References\PlayMaker.dll</HintPath>
+            <HintPath>$(HKModdingPath)PlayMaker.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-            <HintPath>..\..\..\References\UnityEngine.dll</HintPath>
+            <HintPath>$(HKModdingPath)UnityEngine.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.AnimationModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\UnityEngine.AnimationModule.dll</HintPath>
+          <HintPath>$(HKModdingPath)UnityEngine.AnimationModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\UnityEngine.AudioModule.dll</HintPath>
+          <HintPath>$(HKModdingPath)UnityEngine.AudioModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-            <HintPath>..\..\..\References\UnityEngine.CoreModule.dll</HintPath>
+            <HintPath>$(HKModdingPath)UnityEngine.CoreModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ImageConversionModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\UnityEngine.ImageConversionModule.dll</HintPath>
+          <HintPath>$(HKModdingPath)UnityEngine.ImageConversionModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.JSONSerializeModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\UnityEngine.JSONSerializeModule.dll</HintPath>
+          <HintPath>$(HKModdingPath)UnityEngine.JSONSerializeModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ParticleSystemModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\UnityEngine.ParticleSystemModule.dll</HintPath>
+          <HintPath>$(HKModdingPath)UnityEngine.ParticleSystemModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.Physics2DModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\UnityEngine.Physics2DModule.dll</HintPath>
+          <HintPath>$(HKModdingPath)UnityEngine.Physics2DModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\UnityEngine.PhysicsModule.dll</HintPath>
+          <HintPath>$(HKModdingPath)UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
         <Reference Include="Vasi, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>..\..\..\References\Mods\Vasi.dll</HintPath>
+          <HintPath>$(HKModdingPath)Vasi.dll</HintPath>
         </Reference>
     </ItemGroup>
     <Target Name="CopyMod" AfterTargets="PostBuildEvent">
         <Copy
                 SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb"
-                DestinationFolder="D:/Steam/steamapps/common/Hollow Knight/hollow_knight_Data/Managed/Mods/$(TargetName)"
+                DestinationFolder="D:/Steamself/steamapps/common/Hollow Knight/hollow_knight_Data/Managed/Mods/$(TargetName)"
                 SkipUnchangedFiles="true"
         />
     </Target>

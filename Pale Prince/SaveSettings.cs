@@ -11,5 +11,6 @@ namespace Pale_Prince
         };
 
         public bool AltStatue;
+        public bool BossDoor = false;
     }
 }
