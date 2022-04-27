@@ -49,16 +49,15 @@
         <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
           <HintPath>$(HKModdingPath)UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
+        <Reference Include="UnityEngine.UI">
+          <HintPath>..\..\1.5Moddingapi\UnityEngine.UI.dll</HintPath>
+        </Reference>
         <Reference Include="Vasi, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null">
           <HintPath>$(HKModdingPath)Vasi.dll</HintPath>
         </Reference>
     </ItemGroup>
     <Target Name="CopyMod" AfterTargets="PostBuildEvent">
-        <Copy
-                SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb"
-                DestinationFolder="D:/Steamself/steamapps/common/Hollow Knight/hollow_knight_Data/Managed/Mods/$(TargetName)"
-                SkipUnchangedFiles="true"
-        />
+        <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" DestinationFolder="D:/Steamself/steamapps/common/Hollow Knight/hollow_knight_Data/Managed/Mods/$(TargetName)" SkipUnchangedFiles="true" />
     </Target>
 
     <Target Name="CreateReleaseZip" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release'">
@@ -66,15 +65,12 @@
         <Delete Files="$(ProjectDir)/$(TargetName).zip" />
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ProjectDir)/Output/" />
         <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(ProjectDir)/Output/" />
-        <Copy Condition="Exists('$(SolutionDir)/README.md')" SourceFiles="$(SolutionDir)/README.md" DestinationFolder="$(ProjectDir)/Output/" ContinueOnError="true"/>
+        <Copy Condition="Exists('$(SolutionDir)/README.md')" SourceFiles="$(SolutionDir)/README.md" DestinationFolder="$(ProjectDir)/Output/" ContinueOnError="true" />
         <ZipDirectory DestinationFile="$(ProjectDir)/$(TargetName).zip" SourceDirectory="$(ProjectDir)/Output" />
         <RemoveDir Directories="$(ProjectDir)Output" />
 
-        <GetFileHash Files="$(ProjectDir)/$(TargetName).zip" Algorithm="SHA256" >
-            <Output
-                    TaskParameter="Items"
-                    ItemName="FilesWithHashes"
-            />
+        <GetFileHash Files="$(ProjectDir)/$(TargetName).zip" Algorithm="SHA256">
+            <Output TaskParameter="Items" ItemName="FilesWithHashes" />
         </GetFileHash>
         <Message Importance="High" Text="@(FilesWithHashes->'%(Identity): %(FileHash)')" />
     </Target>

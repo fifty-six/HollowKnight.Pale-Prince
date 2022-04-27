@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 using USceneManager = UnityEngine.SceneManagement.SceneManager;
 using UObject = UnityEngine.Object;
 using System.Collections.Generic;
-
+using UnityEngine.UI;
 namespace Pale_Prince
 {
     [UsedImplicitly]
@@ -99,6 +99,7 @@ namespace Pale_Prince
         {
             SaveGameSave();
             AddComponent();
+            RefreshMenu();
         }
         
         private void SaveGameSave(int id = 0)
@@ -110,7 +111,7 @@ namespace Pale_Prince
         {
             GameManager.instance.gameObject.AddComponent<PrinceFinder>();
         }
-        public bool ToggleButtonInsideMenu => true;
+        public bool ToggleButtonInsideMenu =>true;
         public List<IMenuMod.MenuEntry> GetMenuData(IMenuMod.MenuEntry? menu)
         {
             List<IMenuMod.MenuEntry> menus = new();
@@ -151,6 +152,14 @@ namespace Pale_Prince
 
             if (finder != null)
                 UObject.Destroy(finder);
+        }
+        public void RefreshMenu()
+        {
+            MenuScreen menu = ModHooks.BuiltModMenuScreens[this];
+            foreach(var option in menu.gameObject.GetComponentsInChildren<MenuOptionHorizontal>())
+            {
+                option.menuSetting.RefreshValueFromGameSettings();
+            }
         }
     }
 }
