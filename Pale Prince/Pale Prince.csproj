@@ -7,7 +7,7 @@
         <Product>Pale_Prince</Product>
         <Copyright>Copyright © Yusuf Bham 2021</Copyright>
         <OutputPath>bin\$(Configuration)\</OutputPath>
-        <Version>2.0.0</Version>
+        <Version>2.1.0</Version>
         <LangVersion>latest</LangVersion>
         <DebugType>portable</DebugType>
         <HKModdingPath>..\..\..\References\</HKModdingPath>
