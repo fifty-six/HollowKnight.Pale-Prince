@@ -23,11 +23,11 @@ namespace Pale_Prince
 
         private void SceneChanged(Scene arg0, Scene arg1) => StartCoroutine(SceneChangeRoutine(arg0.name, arg1.name));
 
-        private IEnumerator SceneChangeRoutine(string prev, string next)
+        private IEnumerator SceneChangeRoutine(string _, string next)
         {
             if (next == "GG_Workshop") yield return SetStatue();
             if (next != "GG_Hollow_Knight") yield break;
-            if (!PalePrince._settings.BossDoor&&BossSequenceController.IsInSequence) yield break;
+            if (!PalePrince.Settings.BossDoor && BossSequenceController.IsInSequence) yield break;
 
             StartCoroutine(AddComponent());
         }

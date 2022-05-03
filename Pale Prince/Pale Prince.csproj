@@ -10,7 +10,7 @@
         <Version>2.0.0</Version>
         <LangVersion>latest</LangVersion>
         <DebugType>portable</DebugType>
-        <HKModdingPath>D:\HKmod\1.5Moddingapi\</HKModdingPath>
+        <HKModdingPath>..\..\..\References\</HKModdingPath>
     </PropertyGroup>
     <ItemGroup>
         <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
@@ -50,10 +50,10 @@
           <HintPath>$(HKModdingPath)UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.UI">
-          <HintPath>..\..\1.5Moddingapi\UnityEngine.UI.dll</HintPath>
+          <HintPath>$(HKModdingPath)UnityEngine.UI.dll</HintPath>
         </Reference>
         <Reference Include="Vasi, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null">
-          <HintPath>$(HKModdingPath)Vasi.dll</HintPath>
+          <HintPath>$(HKModdingPath)Mods\Vasi.dll</HintPath>
         </Reference>
     </ItemGroup>
     <Target Name="CopyMod" AfterTargets="PostBuildEvent">

@@ -6,32 +6,33 @@ using USceneManager = UnityEngine.SceneManagement.SceneManager;
 using UObject = UnityEngine.Object;
 using System.Collections.Generic;
 using UnityEngine.UI;
+
 namespace Pale_Prince
 {
     [UsedImplicitly]
-    public class PalePrince : Mod, ITogglableMod, ILocalSettings<SaveSettings>,IMenuMod
+    public class PalePrince : Mod, ITogglableMod, ILocalSettings<SaveSettings>, IMenuMod
     {
         [PublicAPI]
         public static PalePrince Instance { get; private set; }
 
-        public static SaveSettings _settings;
+        public static SaveSettings Settings { get; private set; }
 
-        public void OnLoadLocal(SaveSettings s) => _settings = s;
-        
-        public SaveSettings OnSaveLocal() => _settings;
-        
+        public void OnLoadLocal(SaveSettings s) => Settings = s;
+
+        public SaveSettings OnSaveLocal() => Settings;
+
         public override string GetVersion() => Vasi.VersionUtil.GetVersion<PalePrince>();
 
         private string _lastScene;
 
-        public PalePrince() : base("Pale Prince") {}
+        public PalePrince() : base("Pale Prince") { }
 
         public override void Initialize()
         {
             Instance = this;
-            
+
             Unload();
-            
+
             ModHooks.BeforeSavegameSaveHook += BeforeSaveGameSave;
             ModHooks.AfterSavegameLoadHook += SaveGame;
             ModHooks.SavegameSaveHook += SaveGameSave;
@@ -45,22 +46,22 @@ namespace Pale_Prince
 
         private object SetVariableHook(Type t, string key, object obj)
         {
-            if (key != "statueStatePure") 
+            if (key != "statueStatePure")
                 return obj;
 
             var completion = (BossStatue.Completion) obj;
-            
-            _settings.Completion = completion;
+
+            Settings.Completion = completion;
 
             // Set alt false so if the mod is uninstalled then it doesn't break the mod.
             completion.usingAltVersion = false;
 
             return completion;
         }
-        
+
         private object GetVariableHook(Type type, string name, object orig)
         {
-            return name == "statueStatePure" ? _settings.Completion : orig;
+            return name == "statueStatePure" ? Settings.Completion : orig;
         }
 
         private void SceneChanged(Scene arg0, Scene arg1)
@@ -68,9 +69,9 @@ namespace Pale_Prince
             // API Issue.
             if (arg1.name == Constants.MENU_SCENE)
             {
-                _settings = new SaveSettings();
+                Settings = new SaveSettings();
             }
-            
+
             _lastScene = arg0.name;
         }
 
@@ -88,10 +89,10 @@ namespace Pale_Prince
             }
         }
 
-        private void BeforeSaveGameSave(SaveGameData data)
+        private static void BeforeSaveGameSave(SaveGameData data)
         {
-            _settings.AltStatue = PlayerData.instance.statueStateHollowKnight.usingAltVersion;
-            
+            Settings.AltStatue = PlayerData.instance.statueStateHollowKnight.usingAltVersion;
+
             PlayerData.instance.statueStateHollowKnight.usingAltVersion = false;
         }
 
@@ -101,43 +102,36 @@ namespace Pale_Prince
             AddComponent();
             RefreshMenu();
         }
-        
-        private void SaveGameSave(int id = 0)
+
+        private static void SaveGameSave(int id = 0)
         {
-            PlayerData.instance.statueStateHollowKnight.usingAltVersion = _settings.AltStatue;
+            PlayerData.instance.statueStateHollowKnight.usingAltVersion = Settings.AltStatue;
         }
 
         private static void AddComponent()
         {
             GameManager.instance.gameObject.AddComponent<PrinceFinder>();
         }
-        public bool ToggleButtonInsideMenu =>true;
+
+        public bool ToggleButtonInsideMenu => true;
+
         public List<IMenuMod.MenuEntry> GetMenuData(IMenuMod.MenuEntry? menu)
         {
-            List<IMenuMod.MenuEntry> menus = new();
-            menus.Add(
+            return new List<IMenuMod.MenuEntry>
+            {
                 new()
                 {
                     Name = "Enter Pantheon",
-                    Description = "Choose if Pale Prince enable in p4 and p5(choose Pale Prince Statue in hog)",
-                    Values = new string[] { Language.Language.Get("MOH_ON", "MainMenu"), Language.Language.Get("MOH_OFF", "MainMenu") },
-                    Saver = i => ChooseEnter(i),
-                    Loader = () => _settings.BossDoor ? 0 : 1
+                    Description = "Choose if Pale Prince is enabled in P4 and P5",
+                    Values = new[] { Language.Language.Get("MOH_ON", "MainMenu"), Language.Language.Get("MOH_OFF", "MainMenu") },
+                    Saver = ChooseEnter,
+                    Loader = () => Settings.BossDoor ? 0 : 1
                 }
-                );
-            return menus;
+            };
         }
-        private void ChooseEnter(int i)
-        {
-            if (i == 0)
-            {
-                _settings.BossDoor = true;
-            }
-            else
-            {
-                _settings.BossDoor = false;
-            }
-        }
+
+        private static void ChooseEnter(int i) => Settings.BossDoor = i == 0;
+
         public void Unload()
         {
             ModHooks.BeforeSavegameSaveHook -= BeforeSaveGameSave;
@@ -153,10 +147,12 @@ namespace Pale_Prince
             if (finder != null)
                 UObject.Destroy(finder);
         }
-        public void RefreshMenu()
+
+        private void RefreshMenu()
         {
             MenuScreen menu = ModHooks.BuiltModMenuScreens[this];
-            foreach(var option in menu.gameObject.GetComponentsInChildren<MenuOptionHorizontal>())
+            
+            foreach (var option in menu.gameObject.GetComponentsInChildren<MenuOptionHorizontal>())
             {
                 option.menuSetting.RefreshValueFromGameSettings();
             }
