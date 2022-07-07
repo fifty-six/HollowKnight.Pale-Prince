@@ -11,6 +11,7 @@
         <LangVersion>latest</LangVersion>
         <DebugType>portable</DebugType>
         <HKModdingPath>..\..\..\References\</HKModdingPath>
+        <HKModsPath>D:\Steam\steamapps\common\Hollow Knight\hollow_knight_Data\Managed\Mods</HKModsPath>
     </PropertyGroup>
     <ItemGroup>
         <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
@@ -56,8 +57,17 @@
           <HintPath>$(HKModdingPath)Mods\Vasi.dll</HintPath>
         </Reference>
     </ItemGroup>
+    
     <Target Name="CopyMod" AfterTargets="PostBuildEvent">
-        <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" DestinationFolder="D:/Steamself/steamapps/common/Hollow Knight/hollow_knight_Data/Managed/Mods/$(TargetName)" SkipUnchangedFiles="true" />
+        <Error
+                Condition="!Exists('$(HKModsPath)')"
+                Text="HK Mods Path doesn't exist!"
+        />
+        <Copy
+                SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" 
+		DestinationFolder="$(HKModsPath)/$(TargetName)" 
+                SkipUnchangedFiles="true" 
+        />
     </Target>
 
     <Target Name="CreateReleaseZip" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release'">
